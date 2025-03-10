@@ -1,1 +1,55 @@
-lab.ipynb
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Personal configuration files
+.vscode/
+.idea/
+*.iml
+
+# Dependencies and packages
+node_modules/
+vendor/
+venv/
+__pycache__/
+*.egg-info/
+dist/
+build/
+
+# Compilation files
+*.o
+*.so
+*.out
+*.pyc
+*.pyo
+*.exe
+*.dll
+
+# Configuration and credentials
+.env
+*.secret
+*.key
+*.pem
+config.yaml
+
+# Logs and temporary files
+logs/
+*.log
+*.pid
+*.swp
+*.bak
+*.tmp
+
+# Databases and dumps
+*.sqlite
+*.db
+*.sql
+dump.rdb
+
+# Git-related files
+.git/
+
+# Other
+coverage/
+*.cov
+*.coverage
