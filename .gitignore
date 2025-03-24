@@ -53,5 +53,3 @@ dump.rdb
 coverage/
 *.cov
 *.coverage
-
-lab.ipynb
