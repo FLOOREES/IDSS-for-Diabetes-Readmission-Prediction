@@ -1,5 +1,5 @@
 import pandas as pd
-
+from sklearn.ensemble import RandomForestClassifier
 # DATA LOADING
 df = pd.read_csv('data/diabetic_data.csv')
 
@@ -98,16 +98,46 @@ ordinal_vars = {
         '<30': 2
     }
 }
+df_one_hot = feature_engineering(df, encode, petar_vars, one_hot_vars, ordinal_vars)
 
-df = feature_engineering(df, encode, petar_vars, one_hot_vars, ordinal_vars)
 
 # MISSING IMPUTATION
-def missing_imputation(): # Específica per race, potser podem fer abstracció
-    pass
+def missing_imputation(df_raw, df_prep): # Específica per race, potser podem fer abstracció
+    '''
+    Funció per imputar els missings de la única columna que té missings (race)
+    '''
+    race_cols = [col for col in df_prep.columns if col.startswith('race')]
+    norace = df_prep.drop(race_cols, axis=1)
+    train = norace.loc[df_raw.race != '?']
+    test = norace.loc[df_raw.race == '?']
+    y_train = df_raw.loc[df_raw.race != '?', 'race']
 
+    model = RandomForestClassifier()
+    model.fit(train, y_train)  # Usar variables relevantes
+
+    # Predecir missings
+    missings = model.predict(test)    
+    imputed_one_hot = pd.get_dummies(missings, prefix='race', dtype=int)
+
+    # Añadir las columas sin representacion en el test
+    for col in race_cols:
+        if col not in imputed_one_hot.columns:
+            imputed_one_hot[col] = 0
+
+    # Reordenar las columnas
+    imputed_one_hot = imputed_one_hot[race_cols]
+
+    # Assignar valores al dataset original
+    df_prep.loc[df_raw.race == '?', race_cols] = imputed_one_hot.values
+
+    return df_prep
+
+df_no_na = missing_imputation(df, df_one_hot)
 # OUTLIER DETECTION
 
 # NORMALIZATION
 
-# SAVING
-df.to_csv('data/diabetic_data_preprocessed.csv', index=False)
+# SAVING (uncomment to save)
+
+# df.to_csv('data/diabetic_data_preprocessed.csv', index=False)
+df_no_na.to_csv('data/diabetic_data_no_na.csv', index=False)
