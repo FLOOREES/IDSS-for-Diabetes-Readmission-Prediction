@@ -1,6 +1,10 @@
 import pandas as pd
 
-def preprocess(df, encode, discard, one_hot, ordinal):
+# Data loading
+df = pd.read_csv('data/diabetic_data.csv')
+
+# Feature engineering
+def feature_engineering(df, encode, discard, one_hot, ordinal):
     df = df.replace(encode)
     df = df.drop(discard, axis=1)
     df = pd.get_dummies(df, columns=one_hot, dtype=int)
@@ -10,7 +14,8 @@ def preprocess(df, encode, discard, one_hot, ordinal):
 
 encode = {
     '?': pd.NA,
-    }   
+}
+
 petar_vars = [
     'diag_1',
     'diag_2',
@@ -74,8 +79,14 @@ ordinal_vars = {
         '<30': 2
     }
 }
-df = pd.read_csv('data/diabetic_data.csv')
 
-df = preprocess(df, encode, petar_vars, one_hot_vars, ordinal_vars)
-print(df.head())
+df = feature_engineering(df, encode, petar_vars, one_hot_vars, ordinal_vars)
+
+# Missing imputation
+
+# Outlier detection
+
+# Normalization
+
+# Saving
 df.to_csv('data/diabetic_data_preprocessed.csv', index=False)
