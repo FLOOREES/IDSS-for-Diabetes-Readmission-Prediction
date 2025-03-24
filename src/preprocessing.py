@@ -1,10 +1,16 @@
 import pandas as pd
 
-def preprocess(df, discard, one_hot, ordinal):
+def preprocess(df, encode, discard, one_hot, ordinal):
+    df = df.replace(encode)
     df = df.drop(discard, axis=1)
-    df = pd.get_dummies(df, columns=one_hot)
-    
+    df = pd.get_dummies(df, columns=one_hot, dtype=int)
+    for col, mapping in ordinal.items():
+        df[col] = df[col].map(mapping)
+    return df
 
+encode = {
+    '?': pd.NA,
+    }   
 petar_vars = [
     'diag_1',
     'diag_2',
@@ -51,10 +57,25 @@ one_hot_vars = [
 
 ordinal_vars = {
     'age': {
-        ''
+        '[0-10)': 1,
+        '[10-20)': 2,
+        '[20-30)': 3,
+        '[30-40)': 4,
+        '[40-50)': 5,
+        '[50-60)': 6,
+        '[60-70)': 7,
+        '[70-80)': 8,
+        '[80-90)': 9,
+        '[90-100)': 10
     },
-    'readmitted' # target
+    'readmitted' : {
+        'NO': 0,
+        '>30': 1,
+        '<30': 2
+    }
 }
+df = pd.read_csv('data/diabetic_data.csv')
 
-['[0-10)', '[10-20)', '[20-30)', '[30-40)', '[40-50)', '[50-60)',
-       '[60-70)', '[70-80)', '[80-90)', '[90-100)']
+df = preprocess(df, encode, petar_vars, one_hot_vars, ordinal_vars)
+print(df.head())
+df.to_csv('data/diabetic_data_preprocessed.csv', index=False)
