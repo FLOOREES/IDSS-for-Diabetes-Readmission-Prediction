@@ -1,9 +1,9 @@
 import pandas as pd
 
-# Data loading
+# DATA LOADING
 df = pd.read_csv('data/diabetic_data.csv')
 
-# Feature engineering
+# FEATURE ENGINEERING
 def feature_engineering(df, encode, discard, one_hot, ordinal):
     df = df.replace(encode)
     df = df.drop(discard, axis=1)
@@ -82,11 +82,11 @@ ordinal_vars = {
 
 df = feature_engineering(df, encode, petar_vars, one_hot_vars, ordinal_vars)
 
-# Missing imputation
+# MISSING IMPUTATION
 
-# Outlier detection
+# OUTLIER DETECTION
 
-# Normalization
+# NORMALIZATION
 
-# Saving
+# SAVING
 df.to_csv('data/diabetic_data_preprocessed.csv', index=False)
