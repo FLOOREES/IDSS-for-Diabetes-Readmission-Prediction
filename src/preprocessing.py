@@ -34,6 +34,20 @@ logger = logging.getLogger(__name__)
 # ======================== FUNCTIONS ========================
 
 def load_data(path: str) -> pd.DataFrame:
+    """
+    Load a CSV file into a pandas DataFrame.
+
+    Parameters
+    ----------
+    path : str
+        Path to the CSV file.
+
+    Returns
+    -------
+    pd.DataFrame
+        Loaded DataFrame.
+    """
+    
     logger.info(f"Loading data from {path}")
     return pd.read_csv(path)
 
@@ -45,6 +59,34 @@ def feature_engineering(
     one_hot: List[str],
     ordinal: Dict[str, Dict[str, int]]
 ) -> pd.DataFrame:
+    """
+    Perform feature engineering steps including:
+    - Value replacement (e.g., missing values)
+    - Dropping irrelevant columns
+    - One-hot encoding
+    - Ordinal mapping
+    - Low-variance feature removal
+    - Forward/backward fill of missing race using patient history
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Raw input DataFrame.
+    encode : Dict[str, str]
+        Mapping of values to replace (e.g., {"?": pd.NA}).
+    discard : List[str]
+        List of columns to drop from the dataset.
+    one_hot : List[str]
+        Columns to apply one-hot encoding to.
+    ordinal : Dict[str, Dict[str, int]]
+        Dictionary of ordinal mappings for specific columns.
+
+    Returns
+    -------
+    pd.DataFrame
+        Preprocessed DataFrame with features transformed.
+    """
+
     logger.info("Starting feature engineering...")
 
     df = df.replace(encode)
@@ -78,6 +120,27 @@ def feature_engineering(
 
 
 def impute_missing_race(df_raw: pd.DataFrame, df_prep: pd.DataFrame) -> pd.DataFrame:
+    """
+    Impute missing race values using IterativeImputer (MICE)
+    with RandomForestClassifier as the estimator. The method includes:
+    - Label encoding of race categories
+    - Artificial masking of known values for evaluation
+    - Performance evaluation via classification report
+    - One-hot re-encoding of imputed race values
+
+    Parameters
+    ----------
+    df_raw : pd.DataFrame
+        Original DataFrame including the raw 'race' column with '?' as missing.
+    df_prep : pd.DataFrame
+        Preprocessed DataFrame with one-hot encoding already applied.
+
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with imputed race values (one-hot encoded) included.
+    """
+
     logger.info("Starting race imputation using MICE + RandomForestClassifier")
 
     # Identificar columnas one-hot de 'race'
@@ -138,6 +201,14 @@ def impute_missing_race(df_raw: pd.DataFrame, df_prep: pd.DataFrame) -> pd.DataF
 # ======================== MAIN ========================
 
 if __name__ == "__main__":
+    """
+    Main preprocessing pipeline:
+    1. Load data
+    2. Apply feature engineering
+    3. Impute missing race values using MICE
+    4. Save clean dataset
+    """
+
     logger.info("=== PREPROCESSING STARTED ===")
 
     with tqdm(total=4, desc="Preprocessing", unit="step") as pbar:
