@@ -1,0 +1,32 @@
+RAW_DATA_PATH = "data/diabetic_data.csv"
+NO_MISSINGS_PATH="data/diabetic_data_no_na.csv"
+
+MISSING_VALUES = {'?': None}
+
+DROP_COLUMNS = [
+    'diag_1', 'diag_2', 'diag_3', 'weight',
+    'payer_code', 'medical_specialty',
+    'max_glu_serum', 'A1Cresult', 'change', 'diabetesMed'
+]
+
+ONE_HOT_COLUMNS = [
+    'race', 'gender', 'admission_type_id', 'discharge_disposition_id',
+    'admission_source_id', 'metformin', 'repaglinide', 'nateglinide',
+    'chlorpropamide', 'glimepiride', 'acetohexamide', 'glipizide',
+    'glyburide', 'tolbutamide', 'pioglitazone', 'rosiglitazone',
+    'acarbose', 'miglitol', 'troglitazone', 'tolazamide', 'examide',
+    'citoglipton', 'insulin', 'glyburide-metformin', 'glipizide-metformin',
+    'glimepiride-pioglitazone', 'metformin-rosiglitazone',
+    'metformin-pioglitazone'
+]
+
+ORDINAL_MAPPINGS = {
+    'age': {
+        '[0-10)': 1, '[10-20)': 2, '[20-30)': 3, '[30-40)': 4,
+        '[40-50)': 5, '[50-60)': 6, '[60-70)': 7, '[70-80)': 8,
+        '[80-90)': 9, '[90-100)': 10
+    },
+    'readmitted': {
+        'NO': 0, '>30': 1, '<30': 2
+    }
+}

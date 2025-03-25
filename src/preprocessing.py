@@ -1,143 +1,164 @@
 import pandas as pd
+import numpy as np
+from tqdm import tqdm
 from sklearn.ensemble import RandomForestClassifier
-# DATA LOADING
-df = pd.read_csv('data/diabetic_data.csv')
+from typing import Dict, List
+from config import (
+    RAW_DATA_PATH,
+    NO_MISSINGS_PATH,
+    MISSING_VALUES,
+    DROP_COLUMNS,
+    ONE_HOT_COLUMNS,
+    ORDINAL_MAPPINGS
+)
+import logging
+from sklearn.experimental import enable_iterative_imputer  # noqa
+from sklearn.impute import IterativeImputer
+from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import classification_report
 
-# FEATURE ENGINEERING
-def feature_engineering(df, encode, discard, one_hot, ordinal):
-    df = df.replace(encode) # Assignar missings
+# ======================== LOGGER CONFIG ========================
 
-    df = df.drop(discard, axis=1) # Descar variables
+logging.basicConfig(
+    level=logging.INFO,  # Cambia a DEBUG para más detalle
+    format='[%(asctime)s] %(levelname)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    handlers=[
+        logging.StreamHandler(),  # Muestra en consola
+        logging.FileHandler("preprocessing.log")  # Guarda en archivo
+    ]
+)
 
-    df = pd.get_dummies(df, columns=one_hot, dtype=int) # One-hot
+logger = logging.getLogger(__name__)
 
-    for col, mapping in ordinal.items(): # Mapejar (ordinals)
+# ======================== FUNCTIONS ========================
+
+def load_data(path: str) -> pd.DataFrame:
+    logger.info(f"Loading data from {path}")
+    return pd.read_csv(path)
+
+
+def feature_engineering(
+    df: pd.DataFrame,
+    encode: Dict[str, str],
+    discard: List[str],
+    one_hot: List[str],
+    ordinal: Dict[str, Dict[str, int]]
+) -> pd.DataFrame:
+    logger.info("Starting feature engineering...")
+
+    df = df.replace(encode)
+    logger.info("Missing values replaced.")
+
+    df = df.drop(discard, axis=1)
+    logger.info(f"Dropped {len(discard)} columns.")
+
+    df = pd.get_dummies(df, columns=one_hot, dtype=int)
+    logger.info(f"Applied one-hot encoding to {len(one_hot)} columns.")
+
+    for col, mapping in ordinal.items():
         df[col] = df[col].map(mapping)
-    
-    df.drop(df.columns[df.nunique() < 2], axis=1) # Descartar nominals amb 1 sol valor
+    logger.info(f"Mapped {len(ordinal)} ordinal columns.")
 
-    # Generalitzar raça
-    # Com per un usuari podia haver-hi diferents ho he fet per l'última visita i
-    # si no la següent
-    # Tot i així encada queden molts missings de raça que podem mirar d'imputar
-    # Això no se si hauria d'anar a imputació i a més és molt específic de race
-    # i no sabria com posar-ho més abstracte
+    dropped_cols = df.columns[df.nunique() < 2]
+    df = df.drop(dropped_cols, axis=1)
+    logger.info(f"Dropped {len(dropped_cols)} low-variance columns.")
+
+    # Handle missing race (one-hot) via patient visits
     race_cols = [col for col in df.columns if col.startswith('race')]
-    df.loc[df[race_cols].sum(1) == 0, race_cols] = pd.NA
+    missing_race_count = (df[race_cols].sum(axis=1) == 0).sum()
+    df.loc[df[race_cols].sum(axis=1) == 0, race_cols] = pd.NA
 
     df = df.sort_values('encounter_id')
-    df[df.isna()] = df.groupby('patient_nbr')[race_cols].ffill()
-    df[df.isna()] = df.groupby('patient_nbr')[race_cols].bfill()
+    df[race_cols] = df.groupby('patient_nbr')[race_cols].ffill()
+    df[race_cols] = df.groupby('patient_nbr')[race_cols].bfill()
+    logger.info(f"Filled {missing_race_count} missing race rows using ffill/bfill.")
 
     return df
 
-encode = {
-    '?': pd.NA,
-}
 
-petar_vars = [
-    'diag_1',
-    'diag_2',
-    'diag_3',
-    'weight',
-    'payer_code',
-    'medical_specialty',
-    'max_glu_serum',
-    'A1Cresult',
-    'change',
-    'diabetesMed'
-]
+def impute_missing_race(df_raw: pd.DataFrame, df_prep: pd.DataFrame) -> pd.DataFrame:
+    logger.info("Starting race imputation using MICE + RandomForestClassifier")
 
-one_hot_vars = [
-    'race',
-    'gender',
-    'admission_type_id',
-    'discharge_disposition_id',
-    'admission_source_id',
-    'metformin',
-    'repaglinide',
-    'nateglinide',
-    'chlorpropamide',
-    'glimepiride',
-    'acetohexamide',
-    'glipizide',
-    'glyburide',
-    'tolbutamide',
-    'pioglitazone',
-    'rosiglitazone',
-    'acarbose',
-    'miglitol',
-    'troglitazone',
-    'tolazamide',
-    'examide',
-    'citoglipton',
-    'insulin',
-    'glyburide-metformin',
-    'glipizide-metformin',
-    'glimepiride-pioglitazone',
-    'metformin-rosiglitazone',
-    'metformin-pioglitazone'
-]
-
-ordinal_vars = {
-    'age': {
-        '[0-10)': 1,
-        '[10-20)': 2,
-        '[20-30)': 3,
-        '[30-40)': 4,
-        '[40-50)': 5,
-        '[50-60)': 6,
-        '[60-70)': 7,
-        '[70-80)': 8,
-        '[80-90)': 9,
-        '[90-100)': 10
-    },
-    'readmitted' : {
-        'NO': 0,
-        '>30': 1,
-        '<30': 2
-    }
-}
-df_one_hot = feature_engineering(df, encode, petar_vars, one_hot_vars, ordinal_vars)
-
-
-# MISSING IMPUTATION
-def missing_imputation(df_raw, df_prep): # Específica per race, potser podem fer abstracció
-    '''
-    Funció per imputar els missings de la única columna que té missings (race)
-    '''
+    # Identificar columnas one-hot de 'race'
     race_cols = [col for col in df_prep.columns if col.startswith('race')]
-    norace = df_prep.drop(race_cols, axis=1)
-    train = norace.loc[df_raw.race != '?']
-    test = norace.loc[df_raw.race == '?']
-    y_train = df_raw.loc[df_raw.race != '?', 'race']
 
-    model = RandomForestClassifier()
-    model.fit(train, y_train)  # Usar variables relevantes
+    # Crear versión con codificación numérica de la raza
+    race_series = df_raw['race'].replace('?', np.nan)
+    known_mask = race_series.notna()
 
-    # Predecir missings
-    missings = model.predict(test)    
-    imputed_one_hot = pd.get_dummies(missings, prefix='race', dtype=int)
+    # Codificar la raza para el imputador (LabelEncoder)
+    le = LabelEncoder()
+    race_encoded = le.fit_transform(race_series.dropna())
+    race_full = pd.Series(data=np.nan, index=race_series.index)
+    race_full[known_mask] = race_encoded
 
-    # Añadir las columas sin representacion en el test
+    # Combinar con features para imputación
+    X_full = df_prep.drop(columns=race_cols).copy()
+    X_full['race_code'] = race_full
+
+    # Simulación para evaluación: ocultamos parte de los datos conocidos
+    logger.info("Simulating missing values for evaluation...")
+    evaluation_mask = (df_raw['race'] != '?')
+    eval_indices = X_full[evaluation_mask].sample(frac=0.3, random_state=42).index
+    true_values = X_full.loc[eval_indices, 'race_code'].astype(int)
+    X_full.loc[eval_indices, 'race_code'] = np.nan
+
+    # Imputar usando MICE + Random Forest
+    imputer = IterativeImputer(estimator=RandomForestClassifier(), max_iter=10, random_state=0)
+    X_imputed = imputer.fit_transform(X_full)
+
+    # Recuperar columna imputada
+    imputed_race_codes = X_imputed[:, -1].round().astype(int)
+    imputed_race_names = le.inverse_transform(imputed_race_codes)
+    X_full['race_imputed'] = imputed_race_names
+
+    # Evaluación
+    if len(eval_indices) > 0:
+        predicted_eval = X_full.loc[eval_indices, 'race_imputed']
+        true_eval = le.inverse_transform(true_values)
+        logger.info("Race imputation evaluation (simulated missing data):")
+        logger.info("\n" + classification_report(true_eval, predicted_eval))
+
+    # Reconvertir a one-hot
+    imputed_one_hot = pd.get_dummies(X_full['race_imputed'], prefix='race', dtype=int)
+
+    # Asegurar que todas las columnas estén
     for col in race_cols:
         if col not in imputed_one_hot.columns:
             imputed_one_hot[col] = 0
-
-    # Reordenar las columnas
     imputed_one_hot = imputed_one_hot[race_cols]
 
-    # Assignar valores al dataset original
-    df_prep.loc[df_raw.race == '?', race_cols] = imputed_one_hot.values
+    # Insertar en el dataset original
+    df_prep.loc[:, race_cols] = imputed_one_hot.values
+    logger.info("Race imputation (MICE + RF) complete.")
 
     return df_prep
 
-df_no_na = missing_imputation(df, df_one_hot)
-# OUTLIER DETECTION
+# ======================== MAIN ========================
 
-# NORMALIZATION
+if __name__ == "__main__":
+    logger.info("=== PREPROCESSING STARTED ===")
 
-# SAVING (uncomment to save)
+    with tqdm(total=4, desc="Preprocessing", unit="step") as pbar:
+        # Step 1: Load data
+        df = load_data(path=RAW_DATA_PATH)
+        logger.info(f"Data loaded: {df.shape[0]} rows, {df.shape[1]} columns.")
+        pbar.update(1)
 
-# df.to_csv('data/diabetic_data_preprocessed.csv', index=False)
-df_no_na.to_csv('data/diabetic_data_no_na.csv', index=False)
+        # Step 2: Feature engineering
+        df_encoded = feature_engineering(df, MISSING_VALUES, DROP_COLUMNS, ONE_HOT_COLUMNS, ORDINAL_MAPPINGS)
+        logger.info(f"After feature engineering: {df_encoded.shape[0]} rows, {df_encoded.shape[1]} columns.")
+        pbar.update(1)
+
+        # Step 3: Impute missing race
+        df_clean = impute_missing_race(df, df_encoded)
+        logger.info(f"After imputation: {df_clean.shape[0]} rows, {df_clean.shape[1]} columns.")
+        pbar.update(1)
+
+        # Step 4: Save to CSV
+        df_clean.to_csv(NO_MISSINGS_PATH, index=False)
+        logger.info(f"Data saved to {NO_MISSINGS_PATH}")
+        pbar.update(1)
+
+    logger.info("=== PREPROCESSING COMPLETE ===")
