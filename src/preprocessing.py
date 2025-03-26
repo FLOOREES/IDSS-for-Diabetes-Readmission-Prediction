@@ -2,14 +2,17 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from sklearn.ensemble import RandomForestClassifier
-from typing import Dict, List
+from typing import Dict, List, Optional
 from config import (
     RAW_DATA_PATH,
+    MID_PROCESSING_PATH,
     NO_MISSINGS_PATH,
     MISSING_VALUES,
     DROP_COLUMNS,
     ONE_HOT_COLUMNS,
-    ORDINAL_MAPPINGS
+    ORDINAL_MAPPINGS,
+    TREATMENT_COLUMNS,
+    TREATMENT_MAPPING
 )
 import logging
 from sklearn.experimental import enable_iterative_imputer  # noqa
@@ -57,16 +60,21 @@ def feature_engineering(
     encode: Dict[str, str],
     discard: List[str],
     one_hot: List[str],
-    ordinal: Dict[str, Dict[str, int]]
+    ordinal: Dict[str, Dict[str, int]],
+    treatment_cols: List[str],
+    treatment_map: Dict[str, int],
+    save_path: Optional[str] = None
 ) -> pd.DataFrame:
     """
     Perform feature engineering steps including:
     - Value replacement (e.g., missing values)
     - Dropping irrelevant columns
-    - One-hot encoding
-    - Ordinal mapping
+    - One-hot encoding for nominal variables
+    - Ordinal encoding for ordered categorical variables
+    - Treatment dose encoding for medications
     - Low-variance feature removal
-    - Forward/backward fill of missing race using patient history
+    - Forward/backward filling of missing race values based on patient history
+    - Optionally save the resulting DataFrame to CSV
 
     Parameters
     ----------
@@ -77,54 +85,65 @@ def feature_engineering(
     discard : List[str]
         List of columns to drop from the dataset.
     one_hot : List[str]
-        Columns to apply one-hot encoding to.
+        Columns to apply one-hot encoding to (nominal features).
     ordinal : Dict[str, Dict[str, int]]
-        Dictionary of ordinal mappings for specific columns.
+        Ordinal encoding mappings for ordered categorical variables.
+    treatment_cols : List[str]
+        Columns representing treatment types to encode as ordered.
+    treatment_map : Dict[str, int]
+        Mapping of treatment intensity levels (No < Down < Steady < Up).
+    save_path : Optional[str], default=None
+        If provided, the processed DataFrame will be saved as a CSV file at this path.
 
     Returns
     -------
     pd.DataFrame
         Preprocessed DataFrame with features transformed.
     """
-
     logger.info("Starting feature engineering...")
 
-    # Replace custom missing values (e.g. '?') with proper NaN
+    # Replace missing value placeholders
     df = df.replace(encode)
     logger.info("Missing values replaced.")
 
-    # Drop specified irrelevant or low-quality columns
+    # Drop irrelevant or noisy columns
     df = df.drop(discard, axis=1)
     logger.info(f"Dropped {len(discard)} columns.")
 
-    # Apply one-hot encoding to categorical features
+    # One-hot encode nominal categorical features
     df = pd.get_dummies(df, columns=one_hot, dtype=int)
     logger.info(f"Applied one-hot encoding to {len(one_hot)} columns.")
 
-    # Apply ordinal encoding to ordered categories
+    # Apply ordinal encoding for ordered categorical features
     for col, mapping in ordinal.items():
         df[col] = df[col].map(mapping)
     logger.info(f"Mapped {len(ordinal)} ordinal columns.")
 
-    # Remove features with zero variance (e.g. same value in all rows)
+    # Encode treatment dose progression (ordinal)
+    for col in treatment_cols:
+        df[col] = df[col].map(treatment_map)
+    logger.info(f"Encoded treatment columns: {len(treatment_cols)} mapped using treatment scale.")
+
+    # Drop constant (zero-variance) columns
     dropped_cols = df.columns[df.nunique() < 2]
     df = df.drop(dropped_cols, axis=1)
     logger.info(f"Dropped {len(dropped_cols)} low-variance columns.")
 
-    # Handle missing race (one-hot encoded) using patient visit history
+    # Handle missing race (one-hot) using patient history
     race_cols = [col for col in df.columns if col.startswith('race')]
     missing_race_count = (df[race_cols].sum(axis=1) == 0).sum()
-    
-    # Mark rows with no race info as missing
+
     df.loc[df[race_cols].sum(axis=1) == 0, race_cols] = pd.NA
-
-    # Sort by encounter to simulate visit order
     df = df.sort_values('encounter_id')
-
-    # Fill missing race using previous and next visits for the same patient
     df[race_cols] = df.groupby('patient_nbr')[race_cols].ffill()
     df[race_cols] = df.groupby('patient_nbr')[race_cols].bfill()
+
     logger.info(f"Filled {missing_race_count} missing race rows using ffill/bfill.")
+
+    # Optionally save to CSV
+    if save_path:
+        df.to_csv(save_path, index=False)
+        logger.info(f"Feature-engineered DataFrame saved to {save_path}")
 
     return df
 
@@ -228,18 +247,18 @@ if __name__ == "__main__":
         pbar.update(1)
 
         # Step 2: Feature engineering
-        df_encoded = feature_engineering(df, MISSING_VALUES, DROP_COLUMNS, ONE_HOT_COLUMNS, ORDINAL_MAPPINGS)
+        df_encoded = feature_engineering(df, MISSING_VALUES, DROP_COLUMNS, ONE_HOT_COLUMNS, ORDINAL_MAPPINGS, TREATMENT_COLUMNS, TREATMENT_MAPPING, MID_PROCESSING_PATH)
         logger.info(f"After feature engineering: {df_encoded.shape[0]} rows, {df_encoded.shape[1]} columns.")
         pbar.update(1)
 
         # Step 3: Impute missing race
-        df_clean = impute_missing_race(df, df_encoded)
-        logger.info(f"After imputation: {df_clean.shape[0]} rows, {df_clean.shape[1]} columns.")
+        #df_clean = impute_missing_race(df, df_encoded)
+        #logger.info(f"After imputation: {df_clean.shape[0]} rows, {df_clean.shape[1]} columns.")
         pbar.update(1)
 
         # Step 4: Save to CSV
-        df_clean.to_csv(NO_MISSINGS_PATH, index=False)
-        logger.info(f"Data saved to {NO_MISSINGS_PATH}")
+        #df_clean.to_csv(NO_MISSINGS_PATH, index=False)
+        #logger.info(f"Data saved to {NO_MISSINGS_PATH}")
         pbar.update(1)
 
     logger.info("=== PREPROCESSING COMPLETE ===")

@@ -1,4 +1,5 @@
 RAW_DATA_PATH = "data/diabetic_data.csv"
+MID_PROCESSING_PATH = "data/diabetic_data_mid.csv"
 NO_MISSINGS_PATH="data/diabetic_data_no_na.csv"
 
 MISSING_VALUES = {'?': None}
@@ -11,13 +12,7 @@ DROP_COLUMNS = [
 
 ONE_HOT_COLUMNS = [
     'race', 'gender', 'admission_type_id', 'discharge_disposition_id',
-    'admission_source_id', 'metformin', 'repaglinide', 'nateglinide',
-    'chlorpropamide', 'glimepiride', 'acetohexamide', 'glipizide',
-    'glyburide', 'tolbutamide', 'pioglitazone', 'rosiglitazone',
-    'acarbose', 'miglitol', 'troglitazone', 'tolazamide', 'examide',
-    'citoglipton', 'insulin', 'glyburide-metformin', 'glipizide-metformin',
-    'glimepiride-pioglitazone', 'metformin-rosiglitazone',
-    'metformin-pioglitazone'
+    'admission_source_id',
 ]
 
 ORDINAL_MAPPINGS = {
@@ -30,3 +25,20 @@ ORDINAL_MAPPINGS = {
         'NO': 0, '>30': 1, '<30': 2
     }
 }
+
+TREATMENT_MAPPING = {
+    'No': 0,
+    'Down': 1,
+    'Steady': 2,
+    'Up': 3
+}
+
+TREATMENT_COLUMNS = [
+    'metformin', 'repaglinide', 'nateglinide',
+    'chlorpropamide', 'glimepiride', 'acetohexamide', 'glipizide',
+    'glyburide', 'tolbutamide', 'pioglitazone', 'rosiglitazone',
+    'acarbose', 'miglitol', 'troglitazone', 'tolazamide', 'examide',
+    'citoglipton', 'insulin', 'glyburide-metformin', 'glipizide-metformin',
+    'glimepiride-pioglitazone', 'metformin-rosiglitazone',
+    'metformin-pioglitazone'
+]
