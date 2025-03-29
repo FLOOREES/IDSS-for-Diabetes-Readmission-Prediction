@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 # ======================== CUSTOM ITERATIVE IMPUTER ========================
 class ProgressIterativeImputer(IterativeImputer):
-    """ Extends the IterativeImputer to add a progress bar using tqdm. """
+    """ Extends the IterativeImputer to add a progress bar using tqdm. *** NOT WORKING *** """
     def _fit(self, X_filled, mask_missing_values, complete_mask):
         for iteration in tqdm(range(self.max_iter), desc="MICE Imputation Progress", unit="iter"):
             super()._fit(X_filled, mask_missing_values, complete_mask)
