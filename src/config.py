@@ -1,8 +1,10 @@
+import pandas as pd
+
 RAW_DATA_PATH = "data/diabetic_data.csv"
 MID_PROCESSING_PATH = "data/diabetic_data_mid.csv"
 NO_MISSINGS_PATH="data/diabetic_data_no_na.csv"
 
-MISSING_VALUES = {'?': None}
+MISSING_VALUES = {'?': pd.NA}
 
 DROP_COLUMNS = [
     'diag_1', 'diag_2', 'diag_3', 'weight',
@@ -11,7 +13,7 @@ DROP_COLUMNS = [
 ]
 
 ONE_HOT_COLUMNS = [
-    'race', 'gender', 'admission_type_id', 'discharge_disposition_id',
+    'gender', 'admission_type_id', 'discharge_disposition_id',
     'admission_source_id',
 ]
 
