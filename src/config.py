@@ -2,12 +2,12 @@ import pandas as pd
 
 RAW_DATA_PATH = "data/diabetic_data.csv"
 MID_PROCESSING_PATH = "data/diabetic_data_mid.csv"
-NO_MISSINGS_PATH="data/diabetic_data_no_na.csv"
+NO_MISSINGS_PATH="data/diabetic_data_no_na_diag.csv"
 
 MISSING_VALUES = {'?': pd.NA}
 
 DROP_COLUMNS = [
-    'diag_1', 'diag_2', 'diag_3', 'weight',
+    'weight',
     'payer_code', 'medical_specialty',
     'max_glu_serum', 'A1Cresult', 'change', 'diabetesMed'
 ]
