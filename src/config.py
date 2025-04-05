@@ -13,8 +13,7 @@ DROP_COLUMNS = [
 ]
 
 ONE_HOT_COLUMNS = [
-    'gender', 'admission_type_id', 'discharge_disposition_id',
-    'admission_source_id',
+    'gender', 'admission_type_id', 
 ]
 
 ORDINAL_MAPPINGS = {
