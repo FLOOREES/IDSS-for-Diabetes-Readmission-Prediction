@@ -2,7 +2,14 @@ import pandas as pd
 
 RAW_DATA_PATH = "data/diabetic_data.csv"
 MID_PROCESSING_PATH = "data/diabetic_data_mid.csv"
-NO_MISSINGS_PATH="data/diabetic_data_no_na_diag.csv"
+NO_MISSINGS_ENCODED_PATH="data/diabetic_data_no_na_diag.csv"
+
+DIAG_EMBEDDINGS_PATH = "data/diag_embeddings.npy"
+DIAG_LABEL_ENCODER_PATH = "data/diag_label_encoder.json"
+LABEL_ENCODERS_PATH = "data/diabetic_data_label_encoders.json"
+ICD9_HIERARCHY_PATH = "data/icd9Hierarchy.json"
+ICD9_CHAPTERS_PATH = "data/icd9Chapters.json"
+SPACY_MODEL_NAME = "en_core_sci_md"
 
 MISSING_VALUES = {'?': pd.NA}
 
