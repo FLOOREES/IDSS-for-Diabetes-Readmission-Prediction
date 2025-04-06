@@ -1,3 +1,5 @@
+# TODO: IMPLEMENT THE FULL FLOW OF THE WORKFLOW USING A CLASS-BASED APPROACH
+
 # src/main_workflow.py
 import logging
 import pandas as pd
