@@ -2,9 +2,12 @@
 import torch
 import torch.nn as nn
 from typing import Optional, Tuple, Union, Dict, Any
+import logging
 
 # Assuming attention module is defined
 from .attention import AdditiveAttention
+
+logger = logging.getLogger(__name__)
 
 class DecoderRNN(nn.Module):
     """ LSTM/GRU Decoder, potentially using Attention, for sequence reconstruction. """
@@ -17,7 +20,7 @@ class DecoderRNN(nn.Module):
         dropout: float = 0.1,
         use_gru: bool = False,
         use_attention: bool = True,
-        attention_dim: Optional[int] = None
+        attention_dim: Optional[int] = None # Changed from 'attention' instance
     ):
         super().__init__()
         self.reconstruction_dim = reconstruction_dim
@@ -26,24 +29,26 @@ class DecoderRNN(nn.Module):
         self.use_attention = use_attention
 
         RNN = nn.GRU if use_gru else nn.LSTM
-        # Input to decoder RNN might depend on attention strategy
-        # If using attention context vector: encoder_hidden_dim + some_input
-        # If passing encoder outputs through decoder: decoder_hidden_dim
-        # Let's align with a common pattern: use attention context + previous hidden state (simplified here)
-        rnn_input_dim = encoder_hidden_dim # Input is primarily attention context in simpler AEs
 
+        # Define RNN input dimension based on whether attention is used AFTER RNN
+        # If we pass encoder_outputs directly to RNN first
+        rnn_input_dim = encoder_hidden_dim # Decoder RNN processes encoder's output sequence
         self.rnn = RNN(rnn_input_dim, decoder_hidden_dim, n_layers, dropout=dropout if n_layers > 1 else 0, batch_first=True)
+
         self.dropout = nn.Dropout(dropout)
 
         if use_attention:
             if not attention_dim: raise ValueError("attention_dim must be provided if use_attention=True")
+            # Attention compares decoder hidden state with encoder outputs
             self.attention = AdditiveAttention(encoder_hidden_dim, decoder_hidden_dim, attention_dim)
             # Output layer input combines decoder hidden state and attention context
-            self.fc_out = nn.Linear(decoder_hidden_dim + encoder_hidden_dim, reconstruction_dim)
+            fc_input_dim = decoder_hidden_dim + encoder_hidden_dim
         else:
             self.attention = None
             # Output layer just takes decoder hidden state
-            self.fc_out = nn.Linear(decoder_hidden_dim, reconstruction_dim)
+            fc_input_dim = decoder_hidden_dim
+
+        self.fc_out = nn.Linear(fc_input_dim, reconstruction_dim)
 
 
     def forward(
@@ -51,56 +56,56 @@ class DecoderRNN(nn.Module):
         encoder_outputs: torch.Tensor, # (batch, seq_len, enc_hidden_dim)
         encoder_final_hidden: Union[torch.Tensor, Tuple[torch.Tensor, torch.Tensor]], # (n_layers, batch, enc_hidden_dim)
         mask: Optional[torch.Tensor] = None # (batch, seq_len)
-        # teacher_forcing_ratio: float = 0.0 # Not typically used in basic AE reconstruction
     ) -> torch.Tensor:
         """
-        Forward pass for AE decoder. Simplified: processes entire sequence context at once.
-
-        Args:
-            encoder_outputs: Outputs from all encoder timesteps.
-            encoder_final_hidden: Final hidden state tuple (h, c) or tensor h from encoder.
-            mask: Padding mask.
-
-        Returns:
-            reconstructions: Tensor of reconstructed features (batch, seq_len, reconstruction_dim).
+        Forward pass for AE decoder. Applies RNN then optionally Attention + Projection.
         """
-        # Simplified AE decoder: Often uses encoder_outputs directly or applies attention globally.
-        # A more complex seq2seq would iterate timestep by timestep.
+        batch_size, seq_len, _ = encoder_outputs.shape
 
-        # Strategy 1: Pass encoder outputs through decoder RNN
-        # Initialize decoder RNN with final encoder state
-        decoder_outputs, _ = self.rnn(encoder_outputs, encoder_final_hidden) # Assumes rnn input dim matches encoder_outputs dim
+        # 1. Pass encoder outputs through decoder RNN, initialized by final encoder state
+        # The initial hidden state for the decoder RNN is the final hidden state of the encoder.
+        decoder_outputs, _ = self.rnn(encoder_outputs, encoder_final_hidden)
+        # decoder_outputs shape: (batch, seq_len, decoder_hidden_dim)
 
-        if self.use_attention:
-            # Apply attention at each step (conceptually)
-            # This requires adapting the attention mechanism or using a simpler global context
-            batch_size, seq_len, _ = encoder_outputs.shape
-            reconstructions = []
+        if self.use_attention and self.attention is not None:
+            # 2. Apply Attention
+            # We need a query for each timestep. Use the decoder_outputs as queries.
+            # This requires iterating or implementing differently.
+            # Simplification: Use the *final* encoder hidden state as a single query
+            # to get one context vector, and combine that with *all* decoder outputs.
 
-            # Get initial decoder hidden state (last layer of encoder's final state)
+            # Extract final layer's hidden state from encoder to use as query
             if isinstance(encoder_final_hidden, tuple): # LSTM
-                dec_hidden = encoder_final_hidden[0][-1] # (batch, dec_hidden_dim)
+                # Use hidden state h, not cell state c
+                query = encoder_final_hidden[0][-1] # Shape: (batch, encoder_hidden_dim)
             else: # GRU
-                dec_hidden = encoder_final_hidden[-1] # (batch, dec_hidden_dim)
+                query = encoder_final_hidden[-1] # Shape: (batch, encoder_hidden_dim)
+            # Note: Query dim must match decoder_hidden_dim expected by AdditiveAttention
+            # If encoder_hidden_dim != decoder_hidden_dim, need projection or adjust attention.
+            # Assuming here encoder_hidden_dim == decoder_hidden_dim for simplicity.
+            if query.shape[-1] != self.decoder_hidden_dim:
+                 logger.warning(f"Query dim ({query.shape[-1]}) doesn't match decoder hidden dim ({self.decoder_hidden_dim}) for attention. Check dims.")
+                 # Fallback or add projection if needed. For now, proceed assuming they match.
 
-            for t in range(seq_len):
-                # Use previous decoder hidden state to query attention
-                context, attn_weights = self.attention(dec_hidden, encoder_outputs, mask) # (batch, enc_hidden_dim), (batch, seq_len)
 
-                # Combine context with decoder output for this step
-                # Here, using decoder_outputs directly calculated earlier is simpler for AE
-                step_output = decoder_outputs[:, t, :] # (batch, dec_hidden_dim)
-                combined_output = torch.cat((step_output, context), dim=-1) # (batch, dec_hidden + enc_hidden)
-                step_reconstruction = self.fc_out(self.dropout(combined_output)) # (batch, recon_dim)
-                reconstructions.append(step_reconstruction)
+            # Calculate context vector using the single query over all encoder outputs
+            context, attn_weights = self.attention(query, encoder_outputs, mask)
+            # context shape: (batch, encoder_hidden_dim)
 
-                # Update decoder hidden state (simplified - not running RNN step-by-step here)
-                # In a real step-by-step decoder, you'd update dec_hidden = rnn_output_hidden
+            # 3. Combine and Project
+            # Repeat context vector for each timestep
+            context_repeated = context.unsqueeze(1).repeat(1, seq_len, 1) # (batch, seq_len, encoder_hidden_dim)
 
-            output_tensor = torch.stack(reconstructions, dim=1) # (batch, seq_len, recon_dim)
+            # Concatenate decoder outputs with the repeated context
+            combined = torch.cat((decoder_outputs, context_repeated), dim=-1)
+            # combined shape: (batch, seq_len, decoder_hidden_dim + encoder_hidden_dim)
+
+            reconstructions = self.fc_out(self.dropout(combined))
+            # reconstructions shape: (batch, seq_len, reconstruction_dim)
 
         else:
-            # No attention, just project decoder outputs
-            output_tensor = self.fc_out(self.dropout(decoder_outputs)) # (batch, seq_len, recon_dim)
+            # No attention, just project decoder RNN outputs
+            reconstructions = self.fc_out(self.dropout(decoder_outputs))
+            # reconstructions shape: (batch, seq_len, reconstruction_dim)
 
-        return output_tensor
+        return reconstructions

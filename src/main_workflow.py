@@ -201,12 +201,6 @@ def train_autoencoder(train_loader: DataLoader, val_loader: DataLoader) -> Seq2S
         use_attention=USE_ATTENTION # Pass flag, though attention used in decoder
     )
 
-    attention = AdditiveAttention(
-        encoder_hidden_dim=HIDDEN_DIM,
-        decoder_hidden_dim=HIDDEN_DIM,
-        attention_dim=ATTENTION_DIM
-    ) if USE_ATTENTION else None
-
     decoder = DecoderRNN(
         reconstruction_dim=encoder_input_dim, # Reconstruct the concatenated input
         encoder_hidden_dim=HIDDEN_DIM,
@@ -215,7 +209,7 @@ def train_autoencoder(train_loader: DataLoader, val_loader: DataLoader) -> Seq2S
         dropout=DROPOUT,
         use_gru=USE_GRU,
         use_attention=USE_ATTENTION,
-        attention=attention # Pass attention instance
+        attention_dim=ATTENTION_DIM # <<< Pass attention_dim, NOT the instance
     )
 
     autoencoder = Seq2SeqAE(encoder, decoder)
