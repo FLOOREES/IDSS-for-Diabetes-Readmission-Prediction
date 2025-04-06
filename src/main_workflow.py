@@ -6,8 +6,9 @@ from sklearn.model_selection import GroupShuffleSplit
 import numpy as np
 import os
 import config
+import json
 
-from typing import Tuple, Dict, Any
+from typing import Tuple, Dict, Any, Optional
 
 # Project imports (assuming src is in PYTHONPATH or using relative imports carefully)
 from config import ( # Your config file
@@ -28,7 +29,7 @@ from config import ( # Your config file
     OUTLIER_MODE, VISIT_ERROR_PERCENTILE,
     FINAL_ENCODED_DATA_PATH, ENCOUNTER_ID_COL, TARGET_COL, NUMERICAL_FEATURES,
     OHE_FEATURES_PREFIX, ICD9_HIERARCHY_PATH, ICD9_CHAPTERS_PATH,
-    MAX_SEQ_LENGTH,  AE_MODEL_LOAD_PATH, PREDICTOR_MODEL_LOAD_PATH
+    MAX_SEQ_LENGTH,  AE_MODEL_LOAD_PATH, PREDICTOR_MODEL_LOAD_PATH, RESULTS_DIR
 )
 
 # User needs to install these or ensure they are in requirements.txt
@@ -44,6 +45,8 @@ from modeling.model_builder import build_autoencoder_from_config
 from training import AETrainer, PredictorTrainer
 from utils import setup_logging, save_artifact, load_artifact
 from torch.utils.data import DataLoader
+
+from sklearn.metrics import classification_report
 
 # --- Setup ---
 setup_logging(log_file=LOG_FILE)
@@ -301,73 +304,101 @@ def load_predictor(model_path: str, sample_batch: Dict) -> PredictorModel:
         logger.error(f"Failed to load PredictorModel state_dict from {model_path}: {e}", exc_info=True)
         raise
 
-def run_outlier_detection(trained_ae: Seq2SeqAE, df_train: pd.DataFrame, df_full: pd.DataFrame, data_preparer: SequenceDataPreparer):
-    """Performs outlier detection using the trained AE/Encoder."""
+def run_outlier_detection(trained_ae: Seq2SeqAE, df_train: pd.DataFrame, df_full: pd.DataFrame, data_preparer: SequenceDataPreparer, outlier_results_path: Optional[str] = None): # Add optional save path
+    """Performs outlier detection and optionally saves results."""
     logger.info("--- Running Outlier Detection ---")
-    from analysis.outlier_detector import OutlierDetector
+    from analysis.outlier_detector import OutlierDetector # Keep import local?
     outlier_detector = OutlierDetector(
-        ae_model_load_path=None, # Corrected parameter name to ae_model_load_path
         data_preparer=data_preparer,
-        isolation_forest_path=ISOLATION_FOREST_PATH, 
-        device=device
+        isolation_forest_path=ISOLATION_FOREST_PATH,
+        device=device,
+        sample_batch_for_build=None # Not needed if passing model object
     )
-    # Pass the trained model objects directly
     outlier_detector.ae_model = trained_ae.to(device)
     outlier_detector.encoder = trained_ae.get_encoder().to(device)
-
 
     if OUTLIER_MODE == 'visit':
         logger.info("Detecting visit-level outliers...")
         outlier_detector.calculate_and_set_visit_threshold(df_train, percentile=VISIT_ERROR_PERCENTILE)
-        df_outliers = outlier_detector.detect_visit_outliers(df_full)
-        logger.info(f"Visit outlier detection complete. Results shape: {df_outliers.shape}")
-        print(df_outliers[['reconstruction_error', 'is_outlier_visit']].head())
-        print(df_outliers['is_outlier_visit'].value_counts())
+        # Pass save path to detection method
+        df_outliers = outlier_detector.detect_visit_outliers(df_full, results_save_path=outlier_results_path)
+        # Logging is now inside detect_visit_outliers
 
     elif OUTLIER_MODE == 'patient':
         logger.info("Detecting patient-level outliers...")
         outlier_detector.train_isolation_forest(
-            df_train,
-            save_path=ISOLATION_FOREST_PATH,
-            n_estimators=IF_N_ESTIMATORS,
-            contamination=IF_CONTAMINATION,
-            random_state=RANDOM_SEED
+            df_train, save_path=ISOLATION_FOREST_PATH, # Save IF model
+            n_estimators=IF_N_ESTIMATORS, contamination=IF_CONTAMINATION, random_state=RANDOM_SEED
         )
-        df_patient_outliers = outlier_detector.detect_patient_outliers(df_full)
-        logger.info(f"Patient outlier detection complete. Results shape: {df_patient_outliers.shape}")
-        print(df_patient_outliers.head())
-        print(df_patient_outliers['is_outlier_patient'].value_counts())
-
+         # Pass save path to detection method
+        df_patient_outliers = outlier_detector.detect_patient_outliers(df_full, results_save_path=outlier_results_path)
+        # Logging is now inside detect_patient_outliers
     else:
         logger.error(f"Invalid OUTLIER_MODE: {OUTLIER_MODE}")
 
     logger.info("--- Outlier Detection Complete ---")
+    # Return value is less critical now as results are logged/saved internally
 
 
-def run_prediction(trained_predictor: PredictorModel, df_test: pd.DataFrame, data_preparer: SequenceDataPreparer):
-    """Runs prediction on the test set and handles multi-class output."""
+def run_prediction(trained_predictor: PredictorModel, df_test: pd.DataFrame, data_preparer: SequenceDataPreparer, evaluation_save_path: Optional[str] = None): # Add save path
+    """Runs prediction on the test set, evaluates, and optionally saves metrics."""
     logger.info("--- Running Prediction (Multi-Class) ---")
-    from analysis.predictor_inference import Predictor
+    from analysis.predictor_inference import Predictor # Keep import local?
     predictor = Predictor(
         model_path=None, model_config=None, # Pass model directly
-        data_preparer=data_preparer, device=device
+        data_preparer=data_preparer, device=device,
+        trained_model=trained_predictor # Pass the trained model object
     )
-    predictor.model = trained_predictor.to(device)
+    # predictor.model = trained_predictor.to(device) # Already handled in __init__ if passed
 
     # Predict on the entire test set
-    df_predictions = predictor.predict_bulk(df_test) # This method needs adapting in analysis/predictor_inference.py
+    df_predictions = predictor.predict_bulk(df_test)
     logger.info(f"Prediction complete. Results shape: {df_predictions.shape}")
 
-    # --- [MODIFIED Output Interpretation] ---
-    # Assuming predict_bulk now adds columns like 'pred_class_0_prob', 'pred_class_1_prob', 'pred_class_2_prob', 'predicted_class'
+    # --- [MODIFIED Output Interpretation & Evaluation] ---
     output_cols = [TARGET_COL] + [col for col in df_predictions.columns if col.startswith('pred_')]
+    print("\n--- Prediction Sample ---")
     print(df_predictions[output_cols].head())
     if 'predicted_class' in df_predictions.columns:
-         print("\nPredicted Class Distribution:")
-         print(df_predictions['predicted_class'].value_counts())
+         print("\nPredicted Class Distribution (Test Set):")
+         print(df_predictions['predicted_class'].value_counts(normalize=True).round(3)) # Show distribution
+
+    # --- Evaluate Predictions ---
+    logger.info("--- Evaluating Predictions ---")
+    evaluation_metrics = predictor.evaluate(df_predictions, target_col=TARGET_COL)
+
+    if "error" in evaluation_metrics:
+        logger.error(f"Evaluation failed: {evaluation_metrics['error']}")
+    else:
+        logger.info(f"  Accuracy: {evaluation_metrics['accuracy']:.4f}")
+        logger.info("  Classification Report:")
+        # Pretty print the report dictionary or convert back to string
+        print(classification_report(
+            df_predictions[TARGET_COL].astype(int),
+            df_predictions['predicted_class'].astype(int),
+            labels=evaluation_metrics['labels_in_evaluation'],
+            zero_division=0
+        ))
+        # logger.info(f"  Confusion Matrix:\n{np.array(evaluation_metrics['confusion_matrix'])}") # Log CM
+
+        # Optionally save metrics
+        if evaluation_save_path:
+            logger.info(f"Saving evaluation metrics to: {evaluation_save_path}")
+            try:
+                # Need a custom JSON encoder for numpy types in CM if not converted to list
+                class NpEncoder(json.JSONEncoder):
+                    def default(self, obj):
+                        if isinstance(obj, np.integer): return int(obj)
+                        if isinstance(obj, np.floating): return float(obj)
+                        if isinstance(obj, np.ndarray): return obj.tolist()
+                        return super(NpEncoder, self).default(obj)
+                with open(evaluation_save_path, 'w') as f:
+                    json.dump(evaluation_metrics, f, indent=4, cls=NpEncoder)
+                logger.info("Evaluation metrics saved.")
+            except Exception as e:
+                logger.error(f"Failed to save evaluation metrics: {e}")
     # --- [END MODIFIED] ---
 
-    # Add evaluation logic here (e.g., calculate micro/macro AUC, F1 scores, confusion matrix)
     logger.info("--- Prediction Complete ---")
 
 
@@ -438,9 +469,24 @@ if __name__ == "__main__":
 
     # 7. Run Outlier Detection (Example: on validation set)
     logger.info("Running outlier detection on validation set for demonstration.")
-    run_outlier_detection(trained_ae, df_train, df_val, data_preparer) # Use df_val for OD eval
+    # Define path to save outlier results (optional)
+    outlier_results_save_path = os.path.join(RESULTS_DIR, f"outlier_results_{OUTLIER_MODE}.json")
+    run_outlier_detection(
+        trained_ae=trained_ae,
+        df_train=df_train,
+        df_full=df_val, # Run on validation set
+        data_preparer=data_preparer,
+        outlier_results_path=outlier_results_save_path
+    )
 
-    # 8. Run Prediction (on test set)
-    run_prediction(trained_predictor, df_test, data_preparer)
+    # 8. Run Prediction & Evaluation (on test set)
+    # Define path to save evaluation results (optional)
+    eval_results_save_path = os.path.join(RESULTS_DIR, "prediction_evaluation_metrics.json")
+    run_prediction(
+        trained_predictor=trained_predictor,
+        df_test=df_test,
+        data_preparer=data_preparer,
+        evaluation_save_path=eval_results_save_path
+    )
 
     logger.info("========== Workflow Finished ==========")

@@ -70,6 +70,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # Project
 DATA_DIR = os.path.join(BASE_DIR, "data")
 LOGS_DIR = os.path.join(BASE_DIR, "logs")
 MODELS_DIR = os.path.join(BASE_DIR, "models")
+RESULTS_DIR = os.path.join(BASE_DIR, "results") # For saving results like predictions
 
 # Input Data
 RAW_DATA_PATH = os.path.join(DATA_DIR, "diabetic_data.csv")

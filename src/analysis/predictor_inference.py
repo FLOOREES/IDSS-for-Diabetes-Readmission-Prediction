@@ -17,6 +17,7 @@ from data_preparation import SequenceDataPreparer, PatientSequenceDataset, pad_c
 from utils.helpers import load_artifact
 from modeling.model_builder import build_autoencoder_from_config # Assuming this is a helper function to reconstruct the model from config
 
+from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 
 logger = logging.getLogger(__name__)
 
@@ -235,3 +236,57 @@ class Predictor:
 
         self.logger.info("Bulk prediction finished.")
         return df_out
+
+    def evaluate(self, df_predictions: pd.DataFrame, target_col: str) -> Dict[str, Any]:
+        """
+        Calculates evaluation metrics for multi-class classification predictions.
+
+        Args:
+            df_predictions: DataFrame containing true labels and predictions
+                            (must include target_col and 'predicted_class').
+            target_col: The name of the column with the true labels (e.g., 'readmitted').
+
+        Returns:
+            A dictionary containing evaluation metrics.
+        """
+        if 'predicted_class' not in df_predictions.columns:
+             self.logger.error("Column 'predicted_class' not found in DataFrame for evaluation.")
+             return {"error": "Missing 'predicted_class' column."}
+        if target_col not in df_predictions.columns:
+             self.logger.error(f"Target column '{target_col}' not found in DataFrame for evaluation.")
+             return {"error": f"Missing target column '{target_col}'."}
+
+        # Drop rows where prediction or target might be NaN (e.g., if mapping failed)
+        eval_df = df_predictions[[target_col, 'predicted_class']].dropna()
+        y_true = eval_df[target_col].astype(int) # Ensure integer type
+        y_pred = eval_df['predicted_class'].astype(int) # Ensure integer type
+
+        if len(y_true) == 0:
+             self.logger.warning("No valid samples found for evaluation after dropping NaNs.")
+             return {"error": "No valid samples for evaluation."}
+
+        self.logger.info(f"Evaluating predictions for {len(y_true)} samples.")
+
+        # Calculate Metrics
+        accuracy = accuracy_score(y_true, y_pred)
+        # Get unique labels present in both true and pred for confusion matrix display
+        labels = sorted(np.unique(np.concatenate((y_true.unique(), y_pred.unique()))))
+        cm = confusion_matrix(y_true, y_pred, labels=labels)
+        # Get classification report as dict
+        # Ensure zero_division=0 handles cases where a class might have no true/predicted samples
+        report_dict = classification_report(y_true, y_pred, labels=labels, output_dict=True, zero_division=0)
+
+        # Prepare results dictionary
+        results = {
+            "accuracy": accuracy,
+            "confusion_matrix": cm.tolist(), # Convert numpy array to list for JSON serialization
+            "classification_report": report_dict,
+            "num_samples_evaluated": len(y_true),
+            "labels_in_evaluation": labels
+        }
+
+        self.logger.info(f"Evaluation Accuracy: {accuracy:.4f}")
+        # Optionally log parts of the report
+        # self.logger.info(f"Classification Report (Weighted Avg F1): {report_dict.get('weighted avg', {}).get('f1-score', 'N/A'):.4f}")
+
+        return results
