@@ -6,7 +6,7 @@ from sklearn.model_selection import GroupShuffleSplit
 import numpy as np
 import os
 
-from typing import Tuple
+from typing import Tuple, Dict, Any
 
 # Project imports (assuming src is in PYTHONPATH or using relative imports carefully)
 from config import ( # Your config file
@@ -55,7 +55,14 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 logger.info(f"Using device: {device}")
 
 # ==============================================================================
-# Main Workflow Orchestration
+# Workflow Control Flag
+# ==============================================================================
+TRAIN_AE = False # <<< SET THIS TO False TO LOAD SAVED AE MODEL >>>
+# ==============================================================================
+
+
+# ==============================================================================
+# Workflow Functions (Keep previous functions: run_preprocessing, split_data, etc.)
 # ==============================================================================
 def run_preprocessing():
     """Runs Phase 1 and Phase 2 preprocessing."""
@@ -165,80 +172,83 @@ def prepare_dataloaders(
     return train_loader, val_loader
 
 
-def train_autoencoder(train_loader: DataLoader, val_loader: DataLoader) -> Seq2SeqAE:
-    """Trains the sequence autoencoder."""
-    logger.info("--- Training Autoencoder ---")
-
-    # 1. Define Embedding Manager Config
+def build_autoencoder_from_config(sample_batch: Dict) -> Seq2SeqAE:
+    """ Helper function to instantiate the AE model based on config. """
+    logger.info("Building AE model architecture from config...")
+    # Define Embedding Manager Config
     learned_emb_config = {
         col: (vocab_size, OTHER_EMBEDDING_DIM)
         for col, vocab_size in LEARNED_EMB_COLS.items()
     }
-    # Precomputed config needs path and finetune flag
     precomputed_emb_config = {
         col: (DIAG_EMBEDDINGS_PATH, FINETUNE_DIAG_EMBEDDINGS)
         for col in PRECOMPUTED_EMB_COLS
     }
-
-    # 2. Instantiate Model Components
     embedding_manager = EmbeddingManager(learned_emb_config, precomputed_emb_config, device)
     total_emb_dim = embedding_manager.get_total_embedding_dim()
-
-    # Get num_ohe dim (needs sample batch or pre-calculation)
-    # Example: Assuming you know this from config/data exploration
-    sample_batch = next(iter(train_loader))
     num_ohe_features = sample_batch['num_ohe'].shape[-1]
-    logger.info(f"Determined Num OHE Features: {num_ohe_features}")
+    logger.info(f"Determined Num OHE Features for build: {num_ohe_features}")
     encoder_input_dim = num_ohe_features + total_emb_dim
 
     encoder = EncoderRNN(
-        num_ohe_features=num_ohe_features,
-        embedding_manager=embedding_manager,
-        hidden_dim=HIDDEN_DIM,
-        n_layers=NUM_RNN_LAYERS,
-        dropout=DROPOUT,
-        use_gru=USE_GRU,
-        use_attention=USE_ATTENTION # Pass flag, though attention used in decoder
+        num_ohe_features=num_ohe_features, embedding_manager=embedding_manager,
+        hidden_dim=HIDDEN_DIM, n_layers=NUM_RNN_LAYERS, dropout=DROPOUT,
+        use_gru=USE_GRU, use_attention=USE_ATTENTION
     )
-
     decoder = DecoderRNN(
-        reconstruction_dim=encoder_input_dim, # Reconstruct the concatenated input
-        encoder_hidden_dim=HIDDEN_DIM,
-        decoder_hidden_dim=HIDDEN_DIM,
-        n_layers=NUM_RNN_LAYERS,
-        dropout=DROPOUT,
-        use_gru=USE_GRU,
-        use_attention=USE_ATTENTION,
-        attention_dim=ATTENTION_DIM # <<< Pass attention_dim, NOT the instance
+        reconstruction_dim=encoder_input_dim, encoder_hidden_dim=HIDDEN_DIM,
+        decoder_hidden_dim=HIDDEN_DIM, n_layers=NUM_RNN_LAYERS, dropout=DROPOUT,
+        use_gru=USE_GRU, use_attention=USE_ATTENTION, attention_dim=ATTENTION_DIM
     )
-
     autoencoder = Seq2SeqAE(encoder, decoder)
+    logger.info("AE model architecture built.")
+    return autoencoder
 
-    # 3. Instantiate Trainer
+
+def train_autoencoder(train_loader: DataLoader, val_loader: DataLoader) -> Seq2SeqAE:
+    """Trains the sequence autoencoder."""
+    logger.info("--- Training Autoencoder ---")
+    # 1. Instantiate Model Components using helper
+    sample_batch = next(iter(train_loader))
+    autoencoder = build_autoencoder_from_config(sample_batch)
+
+    # 2. Instantiate Trainer
     ae_trainer = AETrainer(
-        model=autoencoder,
-        train_loader=train_loader,
-        val_loader=val_loader,
-        optimizer_name=AE_OPTIMIZER,
-        optimizer_params={'lr': AE_LEARNING_RATE, 'weight_decay': AE_WEIGHT_DECAY},
-        scheduler_name='ReduceLROnPlateau',
-        scheduler_params={'mode': 'min', 'factor': AE_SCHEDULER_FACTOR, 'patience': AE_SCHEDULER_PATIENCE},
-        epochs=AE_EPOCHS,
-        device=device,
-        checkpoint_dir=MODELS_DIR, # Save checkpoints here
-        early_stopping_patience=AE_EARLY_STOPPING_PATIENCE,
-        gradient_clip_value=1.0 # Example clip value
+        model=autoencoder, train_loader=train_loader, val_loader=val_loader,
+        optimizer_name=AE_OPTIMIZER, optimizer_params={'lr': AE_LEARNING_RATE, 'weight_decay': AE_WEIGHT_DECAY},
+        scheduler_name='ReduceLROnPlateau', scheduler_params={'mode': 'min', 'factor': AE_SCHEDULER_FACTOR, 'patience': AE_SCHEDULER_PATIENCE},
+        epochs=AE_EPOCHS, device=device, checkpoint_dir=MODELS_DIR,
+        early_stopping_patience=AE_EARLY_STOPPING_PATIENCE, gradient_clip_value=1.0
     )
-
-    # 4. Run Training
+    # 3. Run Training
     ae_trainer.train()
-
-    # 5. Save final (best) model? BaseTrainer loads best, maybe save explicitly
-    # save_artifact(ae_trainer.model.state_dict(), AE_MODEL_PATH) # Save state dict
-    # Or save the whole trainer model directly if BaseTrainer loads best model into self.model
     logger.info("--- Autoencoder Training Complete ---")
     return ae_trainer.model # Return the trained model (best weights loaded)
 
+def load_autoencoder(model_path: str, sample_batch: Dict) -> Seq2SeqAE:
+    """Loads a pre-trained autoencoder model."""
+    logger.info(f"--- Loading Pre-trained Autoencoder from {model_path} ---")
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"AE model checkpoint not found at: {model_path}")
+
+    # 1. Rebuild the model architecture using the *exact same config*
+    autoencoder = build_autoencoder_from_config(sample_batch)
+
+    # 2. Load the state dictionary
+    try:
+        checkpoint = load_artifact(model_path, device=device)
+        # Ensure checkpoint contains the state dict
+        if 'model_state_dict' not in checkpoint:
+             raise KeyError("Checkpoint dictionary does not contain 'model_state_dict'.")
+
+        autoencoder.load_state_dict(checkpoint['model_state_dict'])
+        autoencoder.to(device) # Ensure model is on correct device
+        autoencoder.eval() # Set to evaluation mode
+        logger.info("Pre-trained Autoencoder loaded successfully.")
+        return autoencoder
+    except Exception as e:
+        logger.error(f"Failed to load AE model state_dict from {model_path}: {e}", exc_info=True)
+        raise
 
 def train_predictor(
     trained_ae: Seq2SeqAE,
@@ -360,76 +370,70 @@ def run_prediction(trained_predictor: PredictorModel, df_test: pd.DataFrame, dat
     logger.info("--- Prediction Complete ---")
 
 
+# ==============================================================================
+# Main Execution Block
+# ==============================================================================
 if __name__ == "__main__":
     logger.info("========== Workflow Started ==========")
 
-    # 1. Run Preprocessing (or ensure data exists)
-    # Comment out if data is already processed
-    run_preprocessing()
-
+    # 1. Run Preprocessing (Optional)
+    # run_preprocessing() # Uncomment to force run
     if not os.path.exists(FINAL_ENCODED_DATA_PATH):
-         logger.error(f"Final encoded data file not found: {FINAL_ENCODED_DATA_PATH}. Run preprocessing first.")
-         # Optionally run preprocessing here:
-         # run_preprocessing()
-         # exit() # Or raise error if preprocessing is mandatory before continuing
+        logger.info(f"{FINAL_ENCODED_DATA_PATH} not found. Running preprocessing...")
+        run_preprocessing()
     else:
-         logger.info(f"Using pre-existing encoded data: {FINAL_ENCODED_DATA_PATH}")
+        logger.info(f"Using pre-existing encoded data: {FINAL_ENCODED_DATA_PATH}")
 
-    # 2. Load Final Processed Data
+    # 2. Load Data
     try:
-        # Add dtype specification if needed, low_memory=False might help with mixed types
         df_final = pd.read_csv(FINAL_ENCODED_DATA_PATH, low_memory=False)
         logger.info(f"Loaded final encoded data. Shape: {df_final.shape}")
-        # --- TEMPORARY: Ensure IDs are present for splitting/grouping ---
-        # If IDs were dropped in phase 1, load raw and merge them back here
+        # Merge IDs if necessary (keep your existing logic if needed)
         if PATIENT_ID_COL not in df_final.columns or ENCOUNTER_ID_COL not in df_final.columns:
-             logger.warning("Patient/Encounter IDs missing from final data. Attempting to merge back from raw data.")
-             # This assumes row order hasn't changed drastically or uses indices
+             logger.warning("Patient/Encounter IDs missing. Merging from raw data.")
              df_raw_ids = pd.read_csv(RAW_DATA_PATH, usecols=['encounter_id', 'patient_nbr'])
-             df_final[ENCOUNTER_ID_COL] = df_raw_ids['encounter_id'] # Assign based on index
+             # Ensure indices align before assigning
+             df_final = df_final.reset_index(drop=True)
+             df_raw_ids = df_raw_ids.reset_index(drop=True)
+             df_final[ENCOUNTER_ID_COL] = df_raw_ids['encounter_id']
              df_final[PATIENT_ID_COL] = df_raw_ids['patient_nbr']
              logger.info("IDs merged back.")
-        # --- END TEMPORARY ---
-
-        # --- [NEW] Reset index after loading to ensure sequential integer index for splitting ---
-        df_final.reset_index(drop=True, inplace=True)
-        logger.info("DataFrame index reset to sequential integer index for splitting.")
-        logger.debug(f"df_final index after reset: {df_final.index}") # Debug log index
-        # --- [END NEW] Reset index after loading ---
+        df_final.reset_index(drop=True, inplace=True) # Ensure clean index
+        logger.info("DataFrame index reset.")
     except Exception as e:
-        logger.error(f"Failed to load final encoded data: {e}", exc_info=True)
-        exit()
-
+        logger.error(f"Failed to load final encoded data: {e}", exc_info=True); exit()
 
     # 3. Split Data
-    logger.debug(f"df_final index BEFORE split_data: {df_final.index}") # Add BEFORE calling split_data
     df_train, df_val, df_test = split_data(df_final)
 
     # 4. Prepare DataLoaders
-    # Create the data preparer instance
     data_preparer = SequenceDataPreparer(
-        patient_id_col=PATIENT_ID_COL,
-        timestamp_col=ENCOUNTER_ID_COL, # Use encounter ID for sorting
-        target_col=TARGET_COL,
-        numerical_features=NUMERICAL_FEATURES,
-        ohe_feature_prefixes=OHE_FEATURES_PREFIX,
-        learned_emb_cols=LEARNED_EMB_COLS,
-        precomputed_emb_cols=PRECOMPUTED_EMB_COLS,
-        max_seq_length=MAX_SEQ_LENGTH,
-        scaler_path=SCALER_PATH # Specify path to save/load scaler
+        patient_id_col=PATIENT_ID_COL, timestamp_col=ENCOUNTER_ID_COL, target_col=TARGET_COL,
+        numerical_features=NUMERICAL_FEATURES, ohe_feature_prefixes=OHE_FEATURES_PREFIX,
+        learned_emb_cols=LEARNED_EMB_COLS, precomputed_emb_cols=PRECOMPUTED_EMB_COLS,
+        max_seq_length=MAX_SEQ_LENGTH, scaler_path=SCALER_PATH
     )
-    train_loader, val_loader = prepare_dataloaders(data_preparer, df_train, df_val, AE_BATCH_SIZE) # Use AE batch size initially
+    # Need a sample batch to determine dims for loading AE if not training
+    # Prepare loaders *before* deciding whether to train or load AE
+    train_loader, val_loader = prepare_dataloaders(data_preparer, df_train, df_val, AE_BATCH_SIZE)
+    sample_batch_for_build = next(iter(train_loader)) # Get a sample batch
 
-    # 5. Train Autoencoder
-    trained_ae = train_autoencoder(train_loader, val_loader)
+    # 5. Train or Load Autoencoder
+    if TRAIN_AE:
+        trained_ae = train_autoencoder(train_loader, val_loader)
+    else:
+        # Ensure the path is defined correctly in config.py
+        ae_model_load_path = os.path.join(MODELS_DIR, f"autoencoder_best.pth") # Path to best saved model
+        trained_ae = load_autoencoder(ae_model_load_path, sample_batch_for_build)
 
-    # 6. Train Predictor (using the same DataLoaders for simplicity here, adjust batch size if needed)
-    # Recreate loaders if different batch size is desired for predictor
+    # 6. Train Predictor (using the loaded or newly trained AE)
+    # Consider using PREDICTOR_BATCH_SIZE if different from AE_BATCH_SIZE
     # train_loader_pred, val_loader_pred = prepare_dataloaders(data_preparer, df_train, df_val, PREDICTOR_BATCH_SIZE)
-    trained_predictor = train_predictor(trained_ae, train_loader, val_loader) # Reuse loaders for now
+    trained_predictor = train_predictor(trained_ae, train_loader, val_loader) # Reuse AE loaders
 
-    # 7. Run Outlier Detection (use full dataset or test set as appropriate)
-    run_outlier_detection(trained_ae, df_train, df_final, data_preparer)
+    # 7. Run Outlier Detection (Example: on validation set)
+    logger.info("Running outlier detection on validation set for demonstration.")
+    run_outlier_detection(trained_ae, df_train, df_val, data_preparer) # Use df_val for OD eval
 
     # 8. Run Prediction (on test set)
     run_prediction(trained_predictor, df_test, data_preparer)
