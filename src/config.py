@@ -171,3 +171,13 @@ RANDOM_SEED = 42
 # Add checks for directory existence
 for dir_path in [DATA_DIR, LOGS_DIR, MODELS_DIR]:
     os.makedirs(dir_path, exist_ok=True)
+
+# ==============================================================================
+# Workflow Control Flag
+# ==============================================================================
+TRAIN_AE = False # <<< SET THIS TO False TO LOAD SAVED AE MODEL >>>
+TRAIN_PREDICTOR = False # Set to True to train Predictor, False to load pre-trained
+AE_MODEL_LOAD_PATH = os.path.join(MODELS_DIR, "autoencoder_best.pth") # Define load paths
+PREDICTOR_MODEL_LOAD_PATH = os.path.join(MODELS_DIR, "predictor_best.pth") # Define load paths
+# ==============================================================================
+

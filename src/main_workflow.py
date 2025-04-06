@@ -5,6 +5,7 @@ import torch
 from sklearn.model_selection import GroupShuffleSplit
 import numpy as np
 import os
+import config
 
 from typing import Tuple, Dict, Any
 
@@ -27,7 +28,7 @@ from config import ( # Your config file
     OUTLIER_MODE, VISIT_ERROR_PERCENTILE,
     FINAL_ENCODED_DATA_PATH, ENCOUNTER_ID_COL, TARGET_COL, NUMERICAL_FEATURES,
     OHE_FEATURES_PREFIX, ICD9_HIERARCHY_PATH, ICD9_CHAPTERS_PATH,
-    MAX_SEQ_LENGTH
+    MAX_SEQ_LENGTH,  AE_MODEL_LOAD_PATH, PREDICTOR_MODEL_LOAD_PATH
 )
 
 # User needs to install these or ensure they are in requirements.txt
@@ -39,8 +40,8 @@ from modeling import (
     EmbeddingManager, EncoderRNN, AdditiveAttention, DecoderRNN,
     Seq2SeqAE, PredictionHead, PredictorModel
 )
+from modeling.model_builder import build_autoencoder_from_config
 from training import AETrainer, PredictorTrainer
-from analysis import OutlierDetector, Predictor
 from utils import setup_logging, save_artifact, load_artifact
 from torch.utils.data import DataLoader
 
@@ -55,11 +56,11 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 logger.info(f"Using device: {device}")
 
 # ==============================================================================
-# Workflow Control Flag
+# Workflow Control Flags (Now from config.py)
 # ==============================================================================
-TRAIN_AE = False # <<< SET THIS TO False TO LOAD SAVED AE MODEL >>>
+TRAIN_AE = config.TRAIN_AE # Use config flags
+TRAIN_PREDICTOR = config.TRAIN_PREDICTOR # Use config flags
 # ==============================================================================
-
 
 # ==============================================================================
 # Workflow Functions (Keep previous functions: run_preprocessing, split_data, etc.)
@@ -171,46 +172,12 @@ def prepare_dataloaders(
     logger.info("--- Sequence Preparation Complete ---")
     return train_loader, val_loader
 
-
-def build_autoencoder_from_config(sample_batch: Dict) -> Seq2SeqAE:
-    """ Helper function to instantiate the AE model based on config. """
-    logger.info("Building AE model architecture from config...")
-    # Define Embedding Manager Config
-    learned_emb_config = {
-        col: (vocab_size, OTHER_EMBEDDING_DIM)
-        for col, vocab_size in LEARNED_EMB_COLS.items()
-    }
-    precomputed_emb_config = {
-        col: (DIAG_EMBEDDINGS_PATH, FINETUNE_DIAG_EMBEDDINGS)
-        for col in PRECOMPUTED_EMB_COLS
-    }
-    embedding_manager = EmbeddingManager(learned_emb_config, precomputed_emb_config, device)
-    total_emb_dim = embedding_manager.get_total_embedding_dim()
-    num_ohe_features = sample_batch['num_ohe'].shape[-1]
-    logger.info(f"Determined Num OHE Features for build: {num_ohe_features}")
-    encoder_input_dim = num_ohe_features + total_emb_dim
-
-    encoder = EncoderRNN(
-        num_ohe_features=num_ohe_features, embedding_manager=embedding_manager,
-        hidden_dim=HIDDEN_DIM, n_layers=NUM_RNN_LAYERS, dropout=DROPOUT,
-        use_gru=USE_GRU, use_attention=USE_ATTENTION
-    )
-    decoder = DecoderRNN(
-        reconstruction_dim=encoder_input_dim, encoder_hidden_dim=HIDDEN_DIM,
-        decoder_hidden_dim=HIDDEN_DIM, n_layers=NUM_RNN_LAYERS, dropout=DROPOUT,
-        use_gru=USE_GRU, use_attention=USE_ATTENTION, attention_dim=ATTENTION_DIM
-    )
-    autoencoder = Seq2SeqAE(encoder, decoder)
-    logger.info("AE model architecture built.")
-    return autoencoder
-
-
 def train_autoencoder(train_loader: DataLoader, val_loader: DataLoader) -> Seq2SeqAE:
     """Trains the sequence autoencoder."""
     logger.info("--- Training Autoencoder ---")
     # 1. Instantiate Model Components using helper
     sample_batch = next(iter(train_loader))
-    autoencoder = build_autoencoder_from_config(sample_batch)
+    autoencoder = build_autoencoder_from_config(sample_batch, logger, device)
 
     # 2. Instantiate Trainer
     ae_trainer = AETrainer(
@@ -232,7 +199,7 @@ def load_autoencoder(model_path: str, sample_batch: Dict) -> Seq2SeqAE:
         raise FileNotFoundError(f"AE model checkpoint not found at: {model_path}")
 
     # 1. Rebuild the model architecture using the *exact same config*
-    autoencoder = build_autoencoder_from_config(sample_batch)
+    autoencoder = build_autoencoder_from_config(sample_batch, logger=logger, device=device)
 
     # 2. Load the state dictionary
     try:
@@ -256,7 +223,7 @@ def train_predictor(
     val_loader: DataLoader
 ) -> PredictorModel:
     """Trains the prediction model using the pre-trained encoder."""
-    logger.info("--- Training Predictor ---")
+    logger.info("--- Training Predictor (Multi-Class) ---") # Updated log message
 
     # 1. Get Pre-trained Encoder
     encoder = trained_ae.get_encoder()
@@ -270,10 +237,9 @@ def train_predictor(
             param.requires_grad = False
 
     # 2. Instantiate Prediction Head
-    # Assuming binary classification for readmitted (output_dim=1 for BCEWithLogitsLoss)
-    # Or output_dim=3 if predicting NO/<30/>30 with NLLLoss/CrossEntropy
-    num_classes = 1 # For BCEWithLogitsLoss
+    num_classes = 3 # Predicting NO (0), >30 (1), <30 (2)
     prediction_head = PredictionHead(input_dim=HIDDEN_DIM, output_dim=num_classes)
+    logger.info(f"Instantiated PredictionHead with output_dim={num_classes}")
 
     predictor_model = PredictorModel(encoder, prediction_head)
 
@@ -286,35 +252,63 @@ def train_predictor(
         optimizer_params={'lr': PREDICTOR_LEARNING_RATE, 'weight_decay': PREDICTOR_WEIGHT_DECAY},
         scheduler_name='ReduceLROnPlateau',
         scheduler_params={'mode': 'min', 'factor': PREDICTOR_SCHEDULER_FACTOR, 'patience': PREDICTOR_SCHEDULER_PATIENCE},
-        criterion_name='bce', # Use 'bce' with BCEWithLogitsLoss
+        criterion_name='crossentropy', # Use 'crossentropy' with CrossEntropyLoss
         epochs=PREDICTOR_EPOCHS,
         device=device,
         checkpoint_dir=MODELS_DIR,
         early_stopping_patience=PREDICTOR_EARLY_STOPPING_PATIENCE,
         gradient_clip_value=1.0
     )
-     # Optional: Configure different learning rates for encoder/head
-    # predictor_trainer.configure_optimizers(finetune_encoder=PREDICTOR_FINETUNE_ENCODER, encoder_lr_factor=0.1)
 
+    # Optional: Configure different learning rates
+    # predictor_trainer.configure_optimizers(finetune_encoder=PREDICTOR_FINETUNE_ENCODER, encoder_lr_factor=0.1)
 
     # 4. Run Training
     predictor_trainer.train()
 
-    # 5. Save final predictor model
-    # save_artifact(predictor_trainer.model.state_dict(), PREDICTOR_MODEL_PATH)
     logger.info("--- Predictor Training Complete ---")
     return predictor_trainer.model
 
+def load_predictor(model_path: str, sample_batch: Dict) -> PredictorModel:
+    """Loads a pre-trained PredictorModel."""
+    logger.info(f"--- Loading Pre-trained PredictorModel from {model_path} ---")
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Predictor model checkpoint not found at: {model_path}")
+
+    # 1. Rebuild model architecture (need encoder and prediction head)
+    # Reuse build_autoencoder_from_config to get the Encoder (assuming PredictorModel reuses the same Encoder)
+    temp_ae = build_autoencoder_from_config(sample_batch, logger=logger, device=device)
+    encoder = temp_ae.get_encoder()
+
+    # 2. Instantiate Prediction Head (need to know output_dim/num_classes - get from config or saved checkpoint)
+    # Assuming you save num_classes in the checkpoint or have it in config
+    num_classes = 3 # Or load from config if available
+    prediction_head = PredictionHead(input_dim=HIDDEN_DIM, output_dim=num_classes)
+
+    # 3. Combine into PredictorModel
+    predictor_model = PredictorModel(encoder, prediction_head)
+
+    # 4. Load state dictionary
+    try:
+        checkpoint = load_artifact(model_path, device=device)
+        if 'model_state_dict' not in checkpoint: raise KeyError("Checkpoint missing 'model_state_dict'.")
+        predictor_model.load_state_dict(checkpoint['model_state_dict'])
+        predictor_model.to(device)
+        predictor_model.eval()
+        logger.info("Pre-trained PredictorModel loaded successfully.")
+        return predictor_model
+    except Exception as e:
+        logger.error(f"Failed to load PredictorModel state_dict from {model_path}: {e}", exc_info=True)
+        raise
 
 def run_outlier_detection(trained_ae: Seq2SeqAE, df_train: pd.DataFrame, df_full: pd.DataFrame, data_preparer: SequenceDataPreparer):
     """Performs outlier detection using the trained AE/Encoder."""
     logger.info("--- Running Outlier Detection ---")
+    from analysis.outlier_detector import OutlierDetector
     outlier_detector = OutlierDetector(
-        ae_model_path=None, # Pass model directly if available
-        encoder_model_path=None,
-        encoder_config=None, # Need to store/pass config if loading encoder state_dict
+        ae_model_load_path=None, # Corrected parameter name to ae_model_load_path
         data_preparer=data_preparer,
-        isolation_forest_path=ISOLATION_FOREST_PATH, # Path for saving/loading
+        isolation_forest_path=ISOLATION_FOREST_PATH, 
         device=device
     )
     # Pass the trained model objects directly
@@ -351,22 +345,29 @@ def run_outlier_detection(trained_ae: Seq2SeqAE, df_train: pd.DataFrame, df_full
 
 
 def run_prediction(trained_predictor: PredictorModel, df_test: pd.DataFrame, data_preparer: SequenceDataPreparer):
-    """Runs prediction on the test set."""
-    logger.info("--- Running Prediction ---")
+    """Runs prediction on the test set and handles multi-class output."""
+    logger.info("--- Running Prediction (Multi-Class) ---")
+    from analysis.predictor_inference import Predictor
     predictor = Predictor(
-        model_path=None, # Pass model directly
-        model_config=None, # Not needed if passing model
-        data_preparer=data_preparer,
-        device=device
+        model_path=None, model_config=None, # Pass model directly
+        data_preparer=data_preparer, device=device
     )
-    predictor.model = trained_predictor.to(device) # Assign loaded/trained model
+    predictor.model = trained_predictor.to(device)
 
-    # Example: Predict on the entire test set
-    df_predictions = predictor.predict_bulk(df_test)
+    # Predict on the entire test set
+    df_predictions = predictor.predict_bulk(df_test) # This method needs adapting in analysis/predictor_inference.py
     logger.info(f"Prediction complete. Results shape: {df_predictions.shape}")
-    print(df_predictions[[TARGET_COL, 'readmission_prob']].head()) # Adjust column name based on output
 
-    # Add evaluation logic here (e.g., calculate AUC on df_predictions)
+    # --- [MODIFIED Output Interpretation] ---
+    # Assuming predict_bulk now adds columns like 'pred_class_0_prob', 'pred_class_1_prob', 'pred_class_2_prob', 'predicted_class'
+    output_cols = [TARGET_COL] + [col for col in df_predictions.columns if col.startswith('pred_')]
+    print(df_predictions[output_cols].head())
+    if 'predicted_class' in df_predictions.columns:
+         print("\nPredicted Class Distribution:")
+         print(df_predictions['predicted_class'].value_counts())
+    # --- [END MODIFIED] ---
+
+    # Add evaluation logic here (e.g., calculate micro/macro AUC, F1 scores, confusion matrix)
     logger.info("--- Prediction Complete ---")
 
 
@@ -419,17 +420,21 @@ if __name__ == "__main__":
     sample_batch_for_build = next(iter(train_loader)) # Get a sample batch
 
     # 5. Train or Load Autoencoder
-    if TRAIN_AE:
+    if TRAIN_AE: # Use flag from config
         trained_ae = train_autoencoder(train_loader, val_loader)
     else:
         # Ensure the path is defined correctly in config.py
-        ae_model_load_path = os.path.join(MODELS_DIR, f"autoencoder_best.pth") # Path to best saved model
+        ae_model_load_path = AE_MODEL_LOAD_PATH # Load path from config
         trained_ae = load_autoencoder(ae_model_load_path, sample_batch_for_build)
 
     # 6. Train Predictor (using the loaded or newly trained AE)
     # Consider using PREDICTOR_BATCH_SIZE if different from AE_BATCH_SIZE
     # train_loader_pred, val_loader_pred = prepare_dataloaders(data_preparer, df_train, df_val, PREDICTOR_BATCH_SIZE)
-    trained_predictor = train_predictor(trained_ae, train_loader, val_loader) # Reuse AE loaders
+    if TRAIN_PREDICTOR: # Use flag from config
+        trained_predictor = train_predictor(trained_ae, train_loader, val_loader) # Reuse AE loaders
+    else:
+        predictor_model_load_path = PREDICTOR_MODEL_LOAD_PATH # Load path from config
+        trained_predictor = load_predictor(predictor_model_load_path, sample_batch_for_build) # Implement load_predictor function (next step)
 
     # 7. Run Outlier Detection (Example: on validation set)
     logger.info("Running outlier detection on validation set for demonstration.")
