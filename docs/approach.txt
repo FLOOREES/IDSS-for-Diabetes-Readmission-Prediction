@@ -1,0 +1,223 @@
+Okay, I understand. You want a clear, professional blueprint for the project structure and implementation flow, focusing on how we'll build it rather than the specific code lines yet. You're right to push for a cleaner main script and a well-defined architecture. Your draft proposal and existing code provide a good starting point.
+
+Let's integrate your ideas and refine them into a comprehensive and professional implementation plan.
+
+Definitive Proposal: Implementing a Sequential Pipeline for Diabetes Encounter Analysis
+
+1. Executive Summary
+
+This document outlines the architectural design and implementation strategy for a PyTorch-based system to analyze sequential diabetes patient encounters. The system will address two key objectives: (1) identify anomalous patient histories or individual visits (outlier detection) and (2) predict hospital readmission status (readmitted) for each encounter using historical context. The architecture emphasizes modularity, reusability, and robust handling of the temporal dependencies inherent in the data, leveraging both pre-computed and newly learned feature embeddings within a sequence modeling framework (LSTM/GRU with Attention).
+
+2. Core Principles & Rationale
+
+Sequence-First: We explicitly acknowledge the non-IID nature of the data. An RNN (LSTM/GRU) forms the core, directly modeling temporal dependencies between visits.
+
+Representation Learning: An Autoencoder (AE) pre-training phase will learn rich, compressed representations (embeddings) of patient trajectories, capturing complex patterns beyond simple statistics.
+
+Modularity & Reusability: The system is broken down into distinct, well-defined components (Data Preparation, Modeling, Training, Analysis) to enhance maintainability, testability, and facilitate reuse (e.g., using the AE's encoder for the prediction task).
+
+Embedding Integration: The architecture seamlessly integrates pre-computed embeddings (like diagnosis codes) and allows for learning new embeddings for other high-cardinality categorical features within the main sequence model.
+
+Masking: Robust handling of variable-length sequences via padding and masking is essential and will be applied consistently during training (loss calculation) and inference (attention, output interpretation).
+
+Causal Prediction: The prediction model will be structured to ensure only past and current information is used to predict the outcome for a given visit.
+
+3. Proposed Project Structure (Filesystem Layout)
+
+diabetes_sequential_analysis/
+├── config.py                 # Configuration (paths, hyperparameters)
+├── data/                     # Raw and processed data, embeddings, mappings
+├── logs/                     # Log files
+├── models/                   # Saved model artifacts (AE, Predictor, IF)
+├── notebooks/                # Jupyter notebooks for exploration, analysis
+├── preprocessing/            # Tabular preprocessing modules
+│   ├── __init__.py
+│   ├── phase1.py             # FirstPhasePreprocessor (as refined)
+│   └── phase2.py             # SecondPhasePreprocessor (as refined)
+├── data_preparation/         # Sequence data preparation modules
+│   ├── __init__.py
+│   ├── sequence_preparer.py  # SequenceDataPreparer class (enhanced)
+│   ├── datasets.py           # PatientSequenceDataset class
+│   └── collators.py          # Collate function (padding, masking)
+├── modeling/                 # PyTorch model definitions
+│   ├── __init__.py
+│   ├── embeddings.py         # EmbeddingManager / Embedding Layers setup
+│   ├── encoder.py            # EncoderRNN module (LSTM/GRU + Attention)
+│   ├── decoder.py            # DecoderRNN module (for AE)
+│   ├── prediction_head.py    # PredictionHead module
+│   ├── autoencoder.py        # Seq2SeqAE (combines Encoder + Decoder)
+│   └── predictor.py          # PredictorModel (combines Encoder + PredictionHead)
+├── training/                 # Training logic and loops
+│   ├── __init__.py
+│   ├── base_trainer.py       # Abstract base class for trainers (optional)
+│   ├── ae_trainer.py         # AETrainer class (AE training loop)
+│   └── predictor_trainer.py  # PredictorTrainer class (Prediction fine-tuning)
+├── analysis/                 # Outlier detection and prediction inference
+│   ├── __init__.py
+│   ├── outlier_detector.py   # OutlierDetector class (using trained AE/Encoder)
+│   └── predictor_inference.py # Predictor class (using trained PredictorModel)
+├── utils/                    # Utility functions
+│   ├── __init__.py
+│   ├── logging_config.py     # Setup logging configuration
+│   └── helpers.py            # General helper functions (e.g., artifact saving)
+├── main_workflow.py          # High-level script orchestrating the pipeline steps
+├── requirements.txt
+└── README.md
+Use code with caution.
+4. Implementation Workflow & Component Details
+
+Step 1: Configuration (config.py)
+
+Define all file paths (raw data, intermediate files, embeddings, mappings, saved models).
+
+Define hyperparameters for preprocessing (e.g., SpaCy model), data preparation (max_seq_length), modeling (hidden_dim, embedding_dim, dropout, use_attention, use_gru), training (epochs, batch_size, lr, weight_decay), and outlier detection (error_percentile_threshold).
+
+Define lists of feature columns: numerical, OHE, label-encoded (for learned embeddings), label-encoded (for pre-computed embeddings), target column (readmitted).
+
+Step 2: Tabular Preprocessing (preprocessing/)
+
+Use phase1.py and phase2.py (as refined previously) to process the raw data.
+
+Input: RAW_DATA_PATH.
+
+Output: A processed Pandas DataFrame (NO_MISSINGS_ENCODED_PATH) with scaled numerical features, OHE features, and label-encoded integers for relevant categorical features. Also produces embedding files (DIAG_EMBEDDINGS_PATH) and mapping files (DIAG_LABEL_ENCODER_PATH, LABEL_ENCODERS_PATH).
+
+Step 3: Sequence Data Preparation (data_preparation/)
+
+sequence_preparer.py::SequenceDataPreparer:
+
+Takes the processed DataFrame and config (feature lists, max_seq_length, target column).
+
+fit_scaler: Fits StandardScaler on numerical features from the training split.
+
+transform: Applies scaling. Groups by patient, sorts visits. For each patient:
+
+Creates a list of feature dictionaries or tuples per visit, separating numerical/OHE, labels for learned embeddings, and labels for pre-computed embeddings. Example: {'num_ohe': tensor([...]), 'learned_cat1': label_int, 'diag1': diag1_label_int, ...}.
+
+Creates the corresponding sequence of target labels (readmitted).
+
+Returns lists of sequences (one per patient, each sequence is a list of feature dicts/tuples), list of target sequences, and list of patient IDs.
+
+datasets.py::PatientSequenceDataset:
+
+Takes the lists generated by SequenceDataPreparer.
+
+__getitem__: Returns the feature sequence, target sequence, and original length for a given index.
+
+collators.py::collate_fn_pad:
+
+Receives a batch of items from the Dataset.
+
+Pads all feature components and the target sequence to the maximum length in that batch.
+
+Crucially, it restructures the features so that all numerical/OHE features are in one tensor, all labels for 'learned_cat1' are in another tensor, all labels for 'diag1' are in another, etc. This aligns with the inputs expected by the model's embedding layers.
+
+Generates the padding mask.
+
+Returns a batch dictionary: {'num_ohe_features': padded_tensor, 'learned_cat1_labels': padded_labels, 'diag1_labels': padded_labels, ..., 'targets': padded_targets, 'mask': mask_tensor, 'lengths': length_tensor}.
+
+Step 4: Model Definition (modeling/)
+
+embeddings.py::EmbeddingManager (or integrate into Encoder):
+
+Takes config (embedding dimensions, pre-computed embedding path/tensor, vocab sizes for learned embeddings).
+
+Initializes all necessary nn.Embedding layers (learned and pre-computed).
+
+Provides a forward method that takes the relevant label tensors from the collated batch and returns the concatenated embedding vectors for each timestep.
+
+encoder.py::EncoderRNN:
+
+Takes config (hidden dim, layers, dropout, attention).
+
+Initializes the EmbeddingManager (or embedding layers directly).
+
+Initializes nn.LSTM or nn.GRU.
+
+Initializes Attention layer (e.g., AdditiveAttention).
+
+forward method:
+
+Looks up/generates embeddings using EmbeddingManager.
+
+Concatenates embeddings with numerical/OHE features from the batch.
+
+Passes concatenated sequence through RNN.
+
+Optionally applies Attention to RNN outputs.
+
+Returns encoder_outputs and encoder_final_hidden.
+
+decoder.py::DecoderRNN:
+
+Takes config.
+
+Initializes RNN layer.
+
+Initializes nn.Linear output layer to match the dimension of the concatenated input feature vector passed to the encoder.
+
+forward method: Takes encoder state/outputs, runs through decoder RNN (possibly using attention), projects to reconstruction dimension.
+
+prediction_head.py::PredictionHead:
+
+Simple nn.Linear layer + activation (Sigmoid/LogSoftmax).
+
+forward method: Takes encoder_outputs and returns logits/probabilities per timestep.
+
+autoencoder.py::Seq2SeqAE: Combines EncoderRNN and DecoderRNN.
+
+predictor.py::PredictorModel: Combines EncoderRNN and PredictionHead.
+
+Step 5: Training (training/)
+
+ae_trainer.py::AETrainer:
+
+Takes AE model, train/val DataLoaders, optimizer, scheduler, loss criterion (masked MSE/MAE), device, epochs, checkpoint path.
+
+Implements the training loop with validation, masked loss calculation, backpropagation, gradient clipping (optional), optimizer/scheduler steps, early stopping, and saving the best encoder weights.
+
+predictor_trainer.py::PredictorTrainer:
+
+Takes Predictor model (with pre-loaded/frozen/fine-tunable encoder), train/val DataLoaders, optimizer, scheduler, loss criterion (masked NLL/BCE), device, epochs, fine-tuning strategy, checkpoint path.
+
+Implements the training loop similar to AETrainer but using the prediction loss and saving the best full predictor model.
+
+Step 6: Analysis (analysis/)
+
+outlier_detector.py::OutlierDetector:
+
+__init__: Takes paths to trained AE model (or just encoder) and potentially Isolation Forest model. Loads models. Takes SequenceDataPreparer instance.
+
+detect_visit_outliers: Loads AE, prepares data batch, runs inference, calculates masked reconstruction errors, applies threshold (loaded or calculated from training errors). Returns DataFrame with outlier flags/scores per visit.
+
+detect_patient_outliers: Loads Encoder, prepares data batch, runs inference to get embeddings. Loads/trains Isolation Forest. Returns DataFrame with outlier flags/scores per patient.
+
+predictor_inference.py::Predictor:
+
+__init__: Takes path to trained Predictor model. Loads model. Takes SequenceDataPreparer.
+
+predict: Takes a patient's sequence (list of feature dicts), prepares it using SequenceDataPreparer and collate_fn (for a single sequence batch), runs inference, extracts predictions for relevant timesteps according to the mask. Returns prediction probabilities/labels.
+
+Step 7: Orchestration (main_workflow.py)
+
+Load configuration from config.py.
+
+Set up logging using utils/logging_config.py.
+
+Preprocessing: Instantiate and run FirstPhasePreprocessor and SecondPhasePreprocessor.
+
+Data Split: Load processed data, perform patient-level train/val split.
+
+Sequence Preparation: Instantiate SequenceDataPreparer, fit scaler on train split. Create train/val PatientSequenceDatasets and DataLoaders.
+
+AE Training: Instantiate Seq2SeqAE model. Instantiate AETrainer. Run trainer.train().
+
+Prediction Training: Instantiate PredictorModel, loading trained encoder weights. Instantiate PredictorTrainer. Run trainer.train().
+
+Outlier Detection: Instantiate OutlierDetector (loading AE/Encoder). Run desired detection method(s) on test/full data. Analyze/save results.
+
+Prediction Inference: Instantiate Predictor (loading PredictorModel). Run predictions on test data or specific examples. Evaluate and save results.
+
+5. Conclusion
+
+This detailed structure provides a robust, modular, and professional framework for tackling the sequential diabetes encounter analysis. By separating concerns into distinct modules (preprocessing, data preparation, modeling, training, analysis) and clearly defining the data flow and component interactions, we establish a maintainable and extensible system capable of delivering valuable insights through both outlier detection and accurate, temporally-aware readmission prediction.

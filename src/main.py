@@ -19,7 +19,7 @@ from config import ( # Your config file
 LABEL_ENCODING= ['discharge_disposition_id', 'admission_source_id']
 
 from preprocessing import FirstPhasePreprocessor
-from second_phase import SecondPhasePreprocessor
+from preprocessing.second_phase import SecondPhasePreprocessor
 from recurrent_data import SequenceDataPreparer 
 from outlier_detection import SequenceOutlierDetectorPyTorch 
 
@@ -47,9 +47,6 @@ if __name__ == "__main__":
     df_phase2 = phase2_processor.transform(df_phase1.copy(), output_path=NO_MISSINGS_ENCODED_PATH)
     logger.info("--- Preprocessing Complete ---")
     logger.info(f"Data shape after Phase 2: {df_phase2.shape}")
-
-    while True:
-        pass
 
     # --- Feature Selection (same logic as before) ---
     logger.info("--- Selecting Features ---")
