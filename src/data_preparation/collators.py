@@ -14,6 +14,19 @@ def pad_collate_fn(batch: List[Dict[str, Any]]) -> Dict[str, Any]:
     Returns:
         A dictionary containing padded tensors for each feature type,
         padded targets, the mask, and original lengths.
+
+        The returned dictionary has the following structure:
+        {
+            'features': {
+                'num_ohe': torch.Tensor (batch_size, max_seq_len, num_ohe_dim),
+                'learned_labels': Dict[str, torch.Tensor] (col_name -> (batch_size, max_seq_len)),
+                'precomputed_labels': Dict[str, torch.Tensor] (col_name -> (batch_size, max_seq_len)),
+            },
+            'targets': torch.Tensor (batch_size, max_seq_len),
+            'mask': torch.Tensor (batch_size, max_seq_len),
+            'lengths': torch.Tensor (batch_size,),
+            'patient_id': List[Any] (batch_size,) # List of patient IDs in the batch
+        }
     """
     # Determine max sequence length in this batch
     lengths = torch.tensor([item['length'] for item in batch], dtype=torch.long)
@@ -34,11 +47,13 @@ def pad_collate_fn(batch: List[Dict[str, Any]]) -> Dict[str, Any]:
              precomputed_label_sequences[col_name] = []
     # Targets
     target_sequences = []
+    patient_ids = [] # List to collect patient IDs
 
     # --- Iterate through the batch and collect data ---
     for item in batch:
         feature_seq = item['features'] # List of visit dicts
         target_seq = item['targets']   # Tensor
+        patient_id = item['patient_id'] # Extract patient ID
         seq_len = item['length']
         padding_len = max_len - seq_len
 
@@ -76,6 +91,8 @@ def pad_collate_fn(batch: List[Dict[str, Any]]) -> Dict[str, Any]:
         # Pad targets
         padded_targets = torch.cat([target_seq] + [torch.zeros(padding_len, dtype=torch.long)], dim=0) # Use 0 for padding targets
         target_sequences.append(padded_targets)
+        patient_ids.append(patient_id) # Collect patient IDs
+
 
     # --- Stack sequences into batch tensors ---
     collated_batch = {}
@@ -92,6 +109,8 @@ def pad_collate_fn(batch: List[Dict[str, Any]]) -> Dict[str, Any]:
 
     collated_batch['targets'] = torch.stack(target_sequences, dim=0) # (batch, seq_len)
     collated_batch['lengths'] = lengths
+    collated_batch['patient_id'] = patient_ids # <-- Corrected: Include patient_ids in batch dict!
+
 
     # --- Create mask ---
     # True for non-padded values

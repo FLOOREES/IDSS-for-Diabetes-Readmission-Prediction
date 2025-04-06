@@ -11,60 +11,59 @@ logger = logging.getLogger(__name__)
 
 class PredictorTrainer(BaseTrainer):
     """ Trainer specifically for the Sequence Prediction model. """
-    def __init__(self, model: PredictorModel, criterion_name: str = 'nll', **kwargs):
+    def __init__(self, model: PredictorModel, criterion_name: str = 'crossentropy', **kwargs): # Default changed
+        # --- [MODIFIED Criterion Setup] ---
         if criterion_name.lower() == 'nll':
-            criterion = nn.NLLLoss(reduction='none')
+            # Requires model output to be LogSoftmax
+            criterion = nn.NLLLoss(reduction='none', ignore_index=-1) # ignore padding index if targets have -1 for padding
+            logger.info("Using NLLLoss (expects LogSoftmax output).")
+        elif criterion_name.lower() == 'crossentropy':
+             # Combines LogSoftmax and NLLLoss, expects raw logits
+             criterion = nn.CrossEntropyLoss(reduction='none', ignore_index=-1) # Use -1 if target padding value is -1
+             logger.info("Using CrossEntropyLoss (expects raw logit output).")
         elif criterion_name.lower() == 'bce':
-             # Expects raw logits from model, target should be float
+             # Should only be used for binary/multi-label now
+             logger.warning("BCE criterion selected but task is likely multi-class.")
              criterion = nn.BCEWithLogitsLoss(reduction='none')
         else:
              raise ValueError(f"Unsupported criterion: {criterion_name}")
+        # --- [END MODIFIED] ---
 
         super().__init__(model=model, criterion=criterion, model_name="predictor", **kwargs)
         self.criterion_name = criterion_name
 
     def _calculate_loss(self, outputs: torch.Tensor, batch: Dict[str, Any]) -> torch.Tensor:
-        """ Calculates masked prediction loss (e.g., BCEWithLogitsLoss). """
+        """ Calculates masked prediction loss (e.g., CrossEntropyLoss). """
         mask = batch['mask'].to(self.device) # (batch, seq_len), bool
-        targets = batch['targets'].to(self.device) # (batch, seq_len), long
+        targets = batch['targets'].to(self.device) # (batch, seq_len), long (integer class labels)
 
-        # Outputs are logits (batch, seq_len, num_classes) -> num_classes is 1 for BCE
+        # Outputs are logits (batch, seq_len, num_classes) -> num_classes is 3
         batch_size, seq_len, num_classes = outputs.shape
 
-        # Flatten outputs and targets
-        outputs_flat = outputs.view(-1, num_classes) # Shape: (batch*seq_len, 1)
+        # Reshape for CrossEntropyLoss:
+        # Input: (N, C) where N = batch*seq_len, C = num_classes
+        # Target: (N) where N = batch*seq_len (containing class indices)
+        outputs_flat = outputs.view(-1, num_classes) # Shape: (batch*seq_len, 3)
         targets_flat = targets.view(-1) # Shape: (batch*seq_len)
         mask_flat = mask.view(-1) # Shape: (batch*seq_len)
 
-        # --- Fix the shape and type mismatch for BCEWithLogitsLoss ---
-        if self.criterion_name.lower() == 'bce':
-            # Target needs to be float and have the same shape as output
-            targets_flat = targets_flat.float().unsqueeze(1) # Shape: (batch*seq_len, 1)
-            # Verify shape match
-            if outputs_flat.shape != targets_flat.shape:
-                 logger.error(f"Shape mismatch AFTER fix! Output: {outputs_flat.shape}, Target: {targets_flat.shape}")
-                 # Raise error or handle differently
-                 raise ValueError("Target and output shapes still mismatch after fix.")
-        # --- End Fix ---
-        # For NLLLoss, targets should remain long and outputs should be log_probs (usually involves LogSoftmax)
-        # Ensure model output and criterion match (e.g., don't use NLLLoss with raw logits)
+        # --- [MODIFIED Loss Calculation] ---
+        # Remove the unsqueeze and float conversion needed for BCE
+        # CrossEntropyLoss expects raw logits and long targets
 
         # Calculate element-wise loss
-        unmasked_loss_flat = self.criterion(outputs_flat, targets_flat) # Shape should now be (batch*seq_len, 1) for BCE
-
-        # If loss output has extra dimension (like from BCE), squeeze it before masking
-        if unmasked_loss_flat.ndim > mask_flat.ndim:
-             unmasked_loss_flat = unmasked_loss_flat.squeeze(-1) # Shape: (batch*seq_len)
+        unmasked_loss_flat = self.criterion(outputs_flat, targets_flat) # Shape: (batch*seq_len)
 
         # Apply mask
         masked_loss_flat = unmasked_loss_flat * mask_flat.float() # Use float mask
+        # --- [END MODIFIED] ---
 
         # Average over non-masked elements
         num_valid_elements = mask_flat.sum()
         if num_valid_elements > 0:
             loss = masked_loss_flat.sum() / num_valid_elements
         else:
-            loss = torch.tensor(0.0, device=self.device, requires_grad=True) # Ensure requires_grad if needed downstream
+            loss = torch.tensor(0.0, device=self.device, requires_grad=True)
 
         return loss
 

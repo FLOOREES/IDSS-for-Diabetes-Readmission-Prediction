@@ -70,6 +70,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # Project
 DATA_DIR = os.path.join(BASE_DIR, "data")
 LOGS_DIR = os.path.join(BASE_DIR, "logs")
 MODELS_DIR = os.path.join(BASE_DIR, "models")
+RESULTS_DIR = os.path.join(BASE_DIR, "results") # For saving results like predictions
 
 # Input Data
 RAW_DATA_PATH = os.path.join(DATA_DIR, "diabetic_data.csv")
@@ -171,3 +172,13 @@ RANDOM_SEED = 42
 # Add checks for directory existence
 for dir_path in [DATA_DIR, LOGS_DIR, MODELS_DIR]:
     os.makedirs(dir_path, exist_ok=True)
+
+# ==============================================================================
+# Workflow Control Flag
+# ==============================================================================
+TRAIN_AE = False # <<< SET THIS TO False TO LOAD SAVED AE MODEL >>>
+TRAIN_PREDICTOR = False # Set to True to train Predictor, False to load pre-trained
+AE_MODEL_LOAD_PATH = os.path.join(MODELS_DIR, "autoencoder_best.pth") # Define load paths
+PREDICTOR_MODEL_LOAD_PATH = os.path.join(MODELS_DIR, "predictor_best.pth") # Define load paths
+# ==============================================================================
+

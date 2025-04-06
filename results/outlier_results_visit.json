@@ -1,0 +1,2247 @@
+{
+    "summary": {
+        "mode": "visit",
+        "total_visits_analyzed": 15263,
+        "threshold_percentile": "N/A",
+        "reconstruction_error_threshold": "13.315108",
+        "num_outliers_detected": 372,
+        "percentage_outliers": "2.44%",
+        "reconstruction_error_mean": "6.130553",
+        "reconstruction_error_median": "5.4946036",
+        "reconstruction_error_std": "2.7794042"
+    },
+    "outlier_details": [
+        {
+            "original_df_index": 589,
+            "patient_nbr": 6169482,
+            "encounter_id": 4772286,
+            "reconstruction_error": 13.989788055419922
+        },
+        {
+            "original_df_index": 718,
+            "patient_nbr": 74020698,
+            "encounter_id": 5503818,
+            "reconstruction_error": 15.79624080657959
+        },
+        {
+            "original_df_index": 1016,
+            "patient_nbr": 103690143,
+            "encounter_id": 7657008,
+            "reconstruction_error": 14.041461944580078
+        },
+        {
+            "original_df_index": 1145,
+            "patient_nbr": 75992886,
+            "encounter_id": 8304684,
+            "reconstruction_error": 13.704360961914062
+        },
+        {
+            "original_df_index": 2140,
+            "patient_nbr": 86854320,
+            "encounter_id": 13861296,
+            "reconstruction_error": 17.557449340820312
+        },
+        {
+            "original_df_index": 2434,
+            "patient_nbr": 89036955,
+            "encounter_id": 15968904,
+            "reconstruction_error": 14.95596694946289
+        },
+        {
+            "original_df_index": 2643,
+            "patient_nbr": 57932163,
+            "encounter_id": 17067144,
+            "reconstruction_error": 14.508156776428223
+        },
+        {
+            "original_df_index": 2811,
+            "patient_nbr": 94718025,
+            "encounter_id": 17954592,
+            "reconstruction_error": 13.680381774902344
+        },
+        {
+            "original_df_index": 3301,
+            "patient_nbr": 1886571,
+            "encounter_id": 20620062,
+            "reconstruction_error": 14.568321228027344
+        },
+        {
+            "original_df_index": 3480,
+            "patient_nbr": 1724256,
+            "encounter_id": 21483690,
+            "reconstruction_error": 13.406325340270996
+        },
+        {
+            "original_df_index": 3852,
+            "patient_nbr": 23611986,
+            "encounter_id": 22908036,
+            "reconstruction_error": 14.476869583129883
+        },
+        {
+            "original_df_index": 4094,
+            "patient_nbr": 1637316,
+            "encounter_id": 23851308,
+            "reconstruction_error": 15.21304702758789
+        },
+        {
+            "original_df_index": 4102,
+            "patient_nbr": 24008121,
+            "encounter_id": 23888700,
+            "reconstruction_error": 16.814247131347656
+        },
+        {
+            "original_df_index": 4422,
+            "patient_nbr": 23643405,
+            "encounter_id": 25014756,
+            "reconstruction_error": 15.639198303222656
+        },
+        {
+            "original_df_index": 5904,
+            "patient_nbr": 56657871,
+            "encounter_id": 29978058,
+            "reconstruction_error": 15.319329261779785
+        },
+        {
+            "original_df_index": 6342,
+            "patient_nbr": 1672740,
+            "encounter_id": 31584900,
+            "reconstruction_error": 14.472318649291992
+        },
+        {
+            "original_df_index": 7045,
+            "patient_nbr": 16189263,
+            "encounter_id": 33998670,
+            "reconstruction_error": 15.035102844238281
+        },
+        {
+            "original_df_index": 7453,
+            "patient_nbr": 9026046,
+            "encounter_id": 35229252,
+            "reconstruction_error": 15.57576847076416
+        },
+        {
+            "original_df_index": 7471,
+            "patient_nbr": 24655905,
+            "encounter_id": 35284332,
+            "reconstruction_error": 13.863564491271973
+        },
+        {
+            "original_df_index": 7491,
+            "patient_nbr": 25537518,
+            "encounter_id": 35386470,
+            "reconstruction_error": 15.820831298828125
+        },
+        {
+            "original_df_index": 8219,
+            "patient_nbr": 92366343,
+            "encounter_id": 37582044,
+            "reconstruction_error": 14.943798065185547
+        },
+        {
+            "original_df_index": 8691,
+            "patient_nbr": 3242970,
+            "encounter_id": 38969952,
+            "reconstruction_error": 27.5592041015625
+        },
+        {
+            "original_df_index": 9282,
+            "patient_nbr": 81519471,
+            "encounter_id": 40740474,
+            "reconstruction_error": 20.126449584960938
+        },
+        {
+            "original_df_index": 9334,
+            "patient_nbr": 78125805,
+            "encounter_id": 40811892,
+            "reconstruction_error": 15.192475318908691
+        },
+        {
+            "original_df_index": 9717,
+            "patient_nbr": 557406,
+            "encounter_id": 41981862,
+            "reconstruction_error": 16.83139419555664
+        },
+        {
+            "original_df_index": 9805,
+            "patient_nbr": 24136200,
+            "encounter_id": 42166806,
+            "reconstruction_error": 23.891481399536133
+        },
+        {
+            "original_df_index": 9845,
+            "patient_nbr": 24136200,
+            "encounter_id": 42317568,
+            "reconstruction_error": 19.77767562866211
+        },
+        {
+            "original_df_index": 10216,
+            "patient_nbr": 102139722,
+            "encounter_id": 43500888,
+            "reconstruction_error": 16.792221069335938
+        },
+        {
+            "original_df_index": 10906,
+            "patient_nbr": 908937,
+            "encounter_id": 45681864,
+            "reconstruction_error": 13.794084548950195
+        },
+        {
+            "original_df_index": 11163,
+            "patient_nbr": 105723576,
+            "encounter_id": 46436172,
+            "reconstruction_error": 22.163955688476562
+        },
+        {
+            "original_df_index": 11226,
+            "patient_nbr": 19197999,
+            "encounter_id": 46625610,
+            "reconstruction_error": 16.839187622070312
+        },
+        {
+            "original_df_index": 11540,
+            "patient_nbr": 2999169,
+            "encounter_id": 47643162,
+            "reconstruction_error": 17.362438201904297
+        },
+        {
+            "original_df_index": 11600,
+            "patient_nbr": 24136200,
+            "encounter_id": 47955414,
+            "reconstruction_error": 25.7795467376709
+        },
+        {
+            "original_df_index": 11671,
+            "patient_nbr": 599913,
+            "encounter_id": 48139284,
+            "reconstruction_error": 15.210739135742188
+        },
+        {
+            "original_df_index": 11677,
+            "patient_nbr": 217404,
+            "encounter_id": 48148056,
+            "reconstruction_error": 13.778970718383789
+        },
+        {
+            "original_df_index": 11983,
+            "patient_nbr": 82312065,
+            "encounter_id": 49143672,
+            "reconstruction_error": 16.010196685791016
+        },
+        {
+            "original_df_index": 12129,
+            "patient_nbr": 29046960,
+            "encounter_id": 49597686,
+            "reconstruction_error": 21.707298278808594
+        },
+        {
+            "original_df_index": 12475,
+            "patient_nbr": 5822073,
+            "encounter_id": 50599590,
+            "reconstruction_error": 14.114456176757812
+        },
+        {
+            "original_df_index": 12607,
+            "patient_nbr": 110444049,
+            "encounter_id": 51080112,
+            "reconstruction_error": 14.271970748901367
+        },
+        {
+            "original_df_index": 12747,
+            "patient_nbr": 23611986,
+            "encounter_id": 51490764,
+            "reconstruction_error": 13.614500045776367
+        },
+        {
+            "original_df_index": 13407,
+            "patient_nbr": 53547606,
+            "encounter_id": 53409666,
+            "reconstruction_error": 14.493152618408203
+        },
+        {
+            "original_df_index": 13506,
+            "patient_nbr": 23513400,
+            "encounter_id": 53643780,
+            "reconstruction_error": 14.429032325744629
+        },
+        {
+            "original_df_index": 13950,
+            "patient_nbr": 435366,
+            "encounter_id": 54910680,
+            "reconstruction_error": 13.935226440429688
+        },
+        {
+            "original_df_index": 13951,
+            "patient_nbr": 101871360,
+            "encounter_id": 54913968,
+            "reconstruction_error": 15.120057106018066
+        },
+        {
+            "original_df_index": 14265,
+            "patient_nbr": 18971145,
+            "encounter_id": 55836270,
+            "reconstruction_error": 13.893753051757812
+        },
+        {
+            "original_df_index": 14904,
+            "patient_nbr": 90859284,
+            "encounter_id": 57681444,
+            "reconstruction_error": 13.363500595092773
+        },
+        {
+            "original_df_index": 15849,
+            "patient_nbr": 77272974,
+            "encounter_id": 60256194,
+            "reconstruction_error": 14.252206802368164
+        },
+        {
+            "original_df_index": 16023,
+            "patient_nbr": 64493667,
+            "encounter_id": 60641418,
+            "reconstruction_error": 14.849069595336914
+        },
+        {
+            "original_df_index": 16212,
+            "patient_nbr": 2681658,
+            "encounter_id": 61155714,
+            "reconstruction_error": 15.947545051574707
+        },
+        {
+            "original_df_index": 16548,
+            "patient_nbr": 369198,
+            "encounter_id": 61954170,
+            "reconstruction_error": 14.624195098876953
+        },
+        {
+            "original_df_index": 16870,
+            "patient_nbr": 109811538,
+            "encounter_id": 62736276,
+            "reconstruction_error": 19.66358184814453
+        },
+        {
+            "original_df_index": 17215,
+            "patient_nbr": 7898652,
+            "encounter_id": 63650058,
+            "reconstruction_error": 15.775346755981445
+        },
+        {
+            "original_df_index": 17726,
+            "patient_nbr": 320814,
+            "encounter_id": 64887780,
+            "reconstruction_error": 16.902904510498047
+        },
+        {
+            "original_df_index": 17759,
+            "patient_nbr": 3779244,
+            "encounter_id": 64986024,
+            "reconstruction_error": 13.795554161071777
+        },
+        {
+            "original_df_index": 18251,
+            "patient_nbr": 4264560,
+            "encounter_id": 66254400,
+            "reconstruction_error": 19.571624755859375
+        },
+        {
+            "original_df_index": 19668,
+            "patient_nbr": 896022,
+            "encounter_id": 69894930,
+            "reconstruction_error": 14.356161117553711
+        },
+        {
+            "original_df_index": 19836,
+            "patient_nbr": 6648012,
+            "encounter_id": 70429332,
+            "reconstruction_error": 15.065168380737305
+        },
+        {
+            "original_df_index": 20422,
+            "patient_nbr": 55353510,
+            "encounter_id": 72001092,
+            "reconstruction_error": 16.61043930053711
+        },
+        {
+            "original_df_index": 20944,
+            "patient_nbr": 2544561,
+            "encounter_id": 73366848,
+            "reconstruction_error": 14.524919509887695
+        },
+        {
+            "original_df_index": 21751,
+            "patient_nbr": 1667304,
+            "encounter_id": 75557754,
+            "reconstruction_error": 14.540733337402344
+        },
+        {
+            "original_df_index": 21899,
+            "patient_nbr": 23923377,
+            "encounter_id": 75923250,
+            "reconstruction_error": 13.780078887939453
+        },
+        {
+            "original_df_index": 22624,
+            "patient_nbr": 105528663,
+            "encounter_id": 77881158,
+            "reconstruction_error": 15.195535659790039
+        },
+        {
+            "original_df_index": 22775,
+            "patient_nbr": 9128799,
+            "encounter_id": 78193086,
+            "reconstruction_error": 18.433984756469727
+        },
+        {
+            "original_df_index": 22961,
+            "patient_nbr": 10599300,
+            "encounter_id": 78665508,
+            "reconstruction_error": 13.866131782531738
+        },
+        {
+            "original_df_index": 23287,
+            "patient_nbr": 4526919,
+            "encounter_id": 79604784,
+            "reconstruction_error": 14.174423217773438
+        },
+        {
+            "original_df_index": 23539,
+            "patient_nbr": 3795876,
+            "encounter_id": 80433468,
+            "reconstruction_error": 20.20742416381836
+        },
+        {
+            "original_df_index": 24114,
+            "patient_nbr": 1333467,
+            "encounter_id": 81973938,
+            "reconstruction_error": 14.851502418518066
+        },
+        {
+            "original_df_index": 25236,
+            "patient_nbr": 1050489,
+            "encounter_id": 84555006,
+            "reconstruction_error": 13.483592987060547
+        },
+        {
+            "original_df_index": 25320,
+            "patient_nbr": 2065995,
+            "encounter_id": 84717858,
+            "reconstruction_error": 14.326276779174805
+        },
+        {
+            "original_df_index": 26573,
+            "patient_nbr": 462978,
+            "encounter_id": 87501288,
+            "reconstruction_error": 16.27135467529297
+        },
+        {
+            "original_df_index": 26593,
+            "patient_nbr": 76590756,
+            "encounter_id": 87553734,
+            "reconstruction_error": 14.018424987792969
+        },
+        {
+            "original_df_index": 26850,
+            "patient_nbr": 16286400,
+            "encounter_id": 88191948,
+            "reconstruction_error": 19.62045669555664
+        },
+        {
+            "original_df_index": 26895,
+            "patient_nbr": 16292907,
+            "encounter_id": 88282806,
+            "reconstruction_error": 13.784984588623047
+        },
+        {
+            "original_df_index": 27412,
+            "patient_nbr": 23643405,
+            "encounter_id": 89774814,
+            "reconstruction_error": 15.825252532958984
+        },
+        {
+            "original_df_index": 27774,
+            "patient_nbr": 93569616,
+            "encounter_id": 91022394,
+            "reconstruction_error": 13.620596885681152
+        },
+        {
+            "original_df_index": 28430,
+            "patient_nbr": 113262084,
+            "encounter_id": 93134874,
+            "reconstruction_error": 14.722070693969727
+        },
+        {
+            "original_df_index": 28635,
+            "patient_nbr": 108649188,
+            "encounter_id": 93828882,
+            "reconstruction_error": 14.566407203674316
+        },
+        {
+            "original_df_index": 28963,
+            "patient_nbr": 17353728,
+            "encounter_id": 94862124,
+            "reconstruction_error": 14.594118118286133
+        },
+        {
+            "original_df_index": 29052,
+            "patient_nbr": 17054226,
+            "encounter_id": 95087592,
+            "reconstruction_error": 13.72901725769043
+        },
+        {
+            "original_df_index": 29076,
+            "patient_nbr": 9767169,
+            "encounter_id": 95153796,
+            "reconstruction_error": 14.495833396911621
+        },
+        {
+            "original_df_index": 29538,
+            "patient_nbr": 8529399,
+            "encounter_id": 96428496,
+            "reconstruction_error": 13.665891647338867
+        },
+        {
+            "original_df_index": 29640,
+            "patient_nbr": 23643405,
+            "encounter_id": 96617274,
+            "reconstruction_error": 14.794309616088867
+        },
+        {
+            "original_df_index": 29957,
+            "patient_nbr": 48181698,
+            "encounter_id": 97384164,
+            "reconstruction_error": 13.430793762207031
+        },
+        {
+            "original_df_index": 30072,
+            "patient_nbr": 24320025,
+            "encounter_id": 97580406,
+            "reconstruction_error": 15.921738624572754
+        },
+        {
+            "original_df_index": 30114,
+            "patient_nbr": 93569616,
+            "encounter_id": 97702086,
+            "reconstruction_error": 15.219562530517578
+        },
+        {
+            "original_df_index": 30386,
+            "patient_nbr": 24618114,
+            "encounter_id": 98289198,
+            "reconstruction_error": 21.637117385864258
+        },
+        {
+            "original_df_index": 30976,
+            "patient_nbr": 194202,
+            "encounter_id": 99777072,
+            "reconstruction_error": 15.836153030395508
+        },
+        {
+            "original_df_index": 31183,
+            "patient_nbr": 74398527,
+            "encounter_id": 100309332,
+            "reconstruction_error": 13.418947219848633
+        },
+        {
+            "original_df_index": 31509,
+            "patient_nbr": 94472595,
+            "encounter_id": 101085474,
+            "reconstruction_error": 14.12004566192627
+        },
+        {
+            "original_df_index": 32047,
+            "patient_nbr": 23952960,
+            "encounter_id": 102463806,
+            "reconstruction_error": 16.77761459350586
+        },
+        {
+            "original_df_index": 32440,
+            "patient_nbr": 85491495,
+            "encounter_id": 103414212,
+            "reconstruction_error": 14.618498802185059
+        },
+        {
+            "original_df_index": 32581,
+            "patient_nbr": 60753348,
+            "encounter_id": 103728642,
+            "reconstruction_error": 13.785402297973633
+        },
+        {
+            "original_df_index": 32601,
+            "patient_nbr": 23491422,
+            "encounter_id": 103784028,
+            "reconstruction_error": 21.830074310302734
+        },
+        {
+            "original_df_index": 32661,
+            "patient_nbr": 42466248,
+            "encounter_id": 103948200,
+            "reconstruction_error": 46.36273193359375
+        },
+        {
+            "original_df_index": 32738,
+            "patient_nbr": 15501537,
+            "encounter_id": 104097852,
+            "reconstruction_error": 14.632686614990234
+        },
+        {
+            "original_df_index": 32885,
+            "patient_nbr": 65624859,
+            "encounter_id": 104495430,
+            "reconstruction_error": 15.198294639587402
+        },
+        {
+            "original_df_index": 33286,
+            "patient_nbr": 9968607,
+            "encounter_id": 105374214,
+            "reconstruction_error": 14.710670471191406
+        },
+        {
+            "original_df_index": 33526,
+            "patient_nbr": 24720093,
+            "encounter_id": 105874278,
+            "reconstruction_error": 13.825183868408203
+        },
+        {
+            "original_df_index": 33593,
+            "patient_nbr": 23395563,
+            "encounter_id": 106020504,
+            "reconstruction_error": 13.60786247253418
+        },
+        {
+            "original_df_index": 33693,
+            "patient_nbr": 93569616,
+            "encounter_id": 106241628,
+            "reconstruction_error": 16.034832000732422
+        },
+        {
+            "original_df_index": 33724,
+            "patient_nbr": 23395563,
+            "encounter_id": 106349382,
+            "reconstruction_error": 16.316316604614258
+        },
+        {
+            "original_df_index": 34728,
+            "patient_nbr": 23266197,
+            "encounter_id": 108363996,
+            "reconstruction_error": 14.151588439941406
+        },
+        {
+            "original_df_index": 34791,
+            "patient_nbr": 828576,
+            "encounter_id": 108479514,
+            "reconstruction_error": 14.83713150024414
+        },
+        {
+            "original_df_index": 37058,
+            "patient_nbr": 23617602,
+            "encounter_id": 114452484,
+            "reconstruction_error": 13.601388931274414
+        },
+        {
+            "original_df_index": 37239,
+            "patient_nbr": 104356143,
+            "encounter_id": 115261116,
+            "reconstruction_error": 21.317764282226562
+        },
+        {
+            "original_df_index": 37773,
+            "patient_nbr": 77841360,
+            "encounter_id": 117235704,
+            "reconstruction_error": 14.186616897583008
+        },
+        {
+            "original_df_index": 38053,
+            "patient_nbr": 95452659,
+            "encounter_id": 118171134,
+            "reconstruction_error": 19.494815826416016
+        },
+        {
+            "original_df_index": 39078,
+            "patient_nbr": 23606541,
+            "encounter_id": 121670934,
+            "reconstruction_error": 14.817403793334961
+        },
+        {
+            "original_df_index": 39421,
+            "patient_nbr": 23304114,
+            "encounter_id": 122700120,
+            "reconstruction_error": 13.891329765319824
+        },
+        {
+            "original_df_index": 39639,
+            "patient_nbr": 48564432,
+            "encounter_id": 123269784,
+            "reconstruction_error": 15.763162612915039
+        },
+        {
+            "original_df_index": 39738,
+            "patient_nbr": 93101742,
+            "encounter_id": 123533310,
+            "reconstruction_error": 14.026598930358887
+        },
+        {
+            "original_df_index": 39857,
+            "patient_nbr": 89517303,
+            "encounter_id": 123912624,
+            "reconstruction_error": 13.795652389526367
+        },
+        {
+            "original_df_index": 40581,
+            "patient_nbr": 34844517,
+            "encounter_id": 125919540,
+            "reconstruction_error": 16.56305694580078
+        },
+        {
+            "original_df_index": 40668,
+            "patient_nbr": 96287796,
+            "encounter_id": 126215334,
+            "reconstruction_error": 16.251834869384766
+        },
+        {
+            "original_df_index": 40986,
+            "patient_nbr": 34255089,
+            "encounter_id": 127051698,
+            "reconstruction_error": 16.678903579711914
+        },
+        {
+            "original_df_index": 41760,
+            "patient_nbr": 97446519,
+            "encounter_id": 129034920,
+            "reconstruction_error": 13.438312530517578
+        },
+        {
+            "original_df_index": 42308,
+            "patient_nbr": 89472402,
+            "encounter_id": 130522872,
+            "reconstruction_error": 14.559244155883789
+        },
+        {
+            "original_df_index": 42522,
+            "patient_nbr": 49373397,
+            "encounter_id": 131108646,
+            "reconstruction_error": 13.509920120239258
+        },
+        {
+            "original_df_index": 43711,
+            "patient_nbr": 98880399,
+            "encounter_id": 134836926,
+            "reconstruction_error": 14.759475708007812
+        },
+        {
+            "original_df_index": 43906,
+            "patient_nbr": 103710654,
+            "encounter_id": 135497376,
+            "reconstruction_error": 14.7428617477417
+        },
+        {
+            "original_df_index": 44388,
+            "patient_nbr": 79925616,
+            "encounter_id": 136925142,
+            "reconstruction_error": 14.256546020507812
+        },
+        {
+            "original_df_index": 45539,
+            "patient_nbr": 23393457,
+            "encounter_id": 140747484,
+            "reconstruction_error": 13.37251091003418
+        },
+        {
+            "original_df_index": 46029,
+            "patient_nbr": 85987485,
+            "encounter_id": 142076592,
+            "reconstruction_error": 16.997529983520508
+        },
+        {
+            "original_df_index": 46075,
+            "patient_nbr": 102105594,
+            "encounter_id": 142223970,
+            "reconstruction_error": 14.36279582977295
+        },
+        {
+            "original_df_index": 46390,
+            "patient_nbr": 104458545,
+            "encounter_id": 143140884,
+            "reconstruction_error": 13.387789726257324
+        },
+        {
+            "original_df_index": 46393,
+            "patient_nbr": 111141936,
+            "encounter_id": 143148450,
+            "reconstruction_error": 14.368576049804688
+        },
+        {
+            "original_df_index": 46442,
+            "patient_nbr": 61735968,
+            "encounter_id": 143248080,
+            "reconstruction_error": 14.378995895385742
+        },
+        {
+            "original_df_index": 46679,
+            "patient_nbr": 80390484,
+            "encounter_id": 143858580,
+            "reconstruction_error": 17.239078521728516
+        },
+        {
+            "original_df_index": 46689,
+            "patient_nbr": 67169268,
+            "encounter_id": 143869830,
+            "reconstruction_error": 15.16983699798584
+        },
+        {
+            "original_df_index": 46698,
+            "patient_nbr": 57159405,
+            "encounter_id": 143884020,
+            "reconstruction_error": 13.446989059448242
+        },
+        {
+            "original_df_index": 46809,
+            "patient_nbr": 53390097,
+            "encounter_id": 144222588,
+            "reconstruction_error": 15.679490089416504
+        },
+        {
+            "original_df_index": 46931,
+            "patient_nbr": 25162731,
+            "encounter_id": 144501120,
+            "reconstruction_error": 15.239823341369629
+        },
+        {
+            "original_df_index": 47143,
+            "patient_nbr": 62178291,
+            "encounter_id": 145080924,
+            "reconstruction_error": 14.209380149841309
+        },
+        {
+            "original_df_index": 47495,
+            "patient_nbr": 99202041,
+            "encounter_id": 145958706,
+            "reconstruction_error": 17.06136703491211
+        },
+        {
+            "original_df_index": 47652,
+            "patient_nbr": 37143702,
+            "encounter_id": 146322696,
+            "reconstruction_error": 14.041168212890625
+        },
+        {
+            "original_df_index": 48137,
+            "patient_nbr": 43703595,
+            "encounter_id": 147269202,
+            "reconstruction_error": 13.420150756835938
+        },
+        {
+            "original_df_index": 48646,
+            "patient_nbr": 84784842,
+            "encounter_id": 148140264,
+            "reconstruction_error": 14.020840644836426
+        },
+        {
+            "original_df_index": 48879,
+            "patient_nbr": 42067179,
+            "encounter_id": 148565700,
+            "reconstruction_error": 13.475334167480469
+        },
+        {
+            "original_df_index": 49468,
+            "patient_nbr": 112190859,
+            "encounter_id": 149745708,
+            "reconstruction_error": 16.741695404052734
+        },
+        {
+            "original_df_index": 49640,
+            "patient_nbr": 85813002,
+            "encounter_id": 150030510,
+            "reconstruction_error": 19.609792709350586
+        },
+        {
+            "original_df_index": 49703,
+            "patient_nbr": 24816420,
+            "encounter_id": 150189726,
+            "reconstruction_error": 13.80118179321289
+        },
+        {
+            "original_df_index": 49860,
+            "patient_nbr": 89509968,
+            "encounter_id": 150421338,
+            "reconstruction_error": 15.220283508300781
+        },
+        {
+            "original_df_index": 50678,
+            "patient_nbr": 100329975,
+            "encounter_id": 151963662,
+            "reconstruction_error": 13.769200325012207
+        },
+        {
+            "original_df_index": 51061,
+            "patient_nbr": 93743001,
+            "encounter_id": 152688474,
+            "reconstruction_error": 14.208800315856934
+        },
+        {
+            "original_df_index": 51214,
+            "patient_nbr": 71213616,
+            "encounter_id": 152950464,
+            "reconstruction_error": 19.340450286865234
+        },
+        {
+            "original_df_index": 51328,
+            "patient_nbr": 108897210,
+            "encounter_id": 153196488,
+            "reconstruction_error": 14.448479652404785
+        },
+        {
+            "original_df_index": 51339,
+            "patient_nbr": 78180975,
+            "encounter_id": 153258894,
+            "reconstruction_error": 14.97952938079834
+        },
+        {
+            "original_df_index": 51533,
+            "patient_nbr": 58848966,
+            "encounter_id": 153568428,
+            "reconstruction_error": 16.772125244140625
+        },
+        {
+            "original_df_index": 51685,
+            "patient_nbr": 91723869,
+            "encounter_id": 153857202,
+            "reconstruction_error": 18.728788375854492
+        },
+        {
+            "original_df_index": 52191,
+            "patient_nbr": 100467954,
+            "encounter_id": 154759332,
+            "reconstruction_error": 14.747453689575195
+        },
+        {
+            "original_df_index": 52318,
+            "patient_nbr": 89472402,
+            "encounter_id": 154995534,
+            "reconstruction_error": 13.438261985778809
+        },
+        {
+            "original_df_index": 52325,
+            "patient_nbr": 42769701,
+            "encounter_id": 155005488,
+            "reconstruction_error": 13.926791191101074
+        },
+        {
+            "original_df_index": 52381,
+            "patient_nbr": 63615384,
+            "encounter_id": 155109240,
+            "reconstruction_error": 15.958466529846191
+        },
+        {
+            "original_df_index": 52468,
+            "patient_nbr": 101825514,
+            "encounter_id": 155247786,
+            "reconstruction_error": 14.45008659362793
+        },
+        {
+            "original_df_index": 52480,
+            "patient_nbr": 52499844,
+            "encounter_id": 155280096,
+            "reconstruction_error": 15.067828178405762
+        },
+        {
+            "original_df_index": 53113,
+            "patient_nbr": 23230116,
+            "encounter_id": 156239856,
+            "reconstruction_error": 15.430761337280273
+        },
+        {
+            "original_df_index": 53524,
+            "patient_nbr": 90350505,
+            "encounter_id": 156989352,
+            "reconstruction_error": 13.446321487426758
+        },
+        {
+            "original_df_index": 53945,
+            "patient_nbr": 31268862,
+            "encounter_id": 157699272,
+            "reconstruction_error": 14.635919570922852
+        },
+        {
+            "original_df_index": 54008,
+            "patient_nbr": 66108654,
+            "encounter_id": 157753644,
+            "reconstruction_error": 13.435153007507324
+        },
+        {
+            "original_df_index": 54032,
+            "patient_nbr": 25069329,
+            "encounter_id": 157774302,
+            "reconstruction_error": 14.149528503417969
+        },
+        {
+            "original_df_index": 54072,
+            "patient_nbr": 61152318,
+            "encounter_id": 157870386,
+            "reconstruction_error": 15.23051929473877
+        },
+        {
+            "original_df_index": 54187,
+            "patient_nbr": 85476951,
+            "encounter_id": 158062176,
+            "reconstruction_error": 16.47433853149414
+        },
+        {
+            "original_df_index": 54200,
+            "patient_nbr": 90573192,
+            "encounter_id": 158089182,
+            "reconstruction_error": 15.285205841064453
+        },
+        {
+            "original_df_index": 54290,
+            "patient_nbr": 101859273,
+            "encounter_id": 158254536,
+            "reconstruction_error": 13.988702774047852
+        },
+        {
+            "original_df_index": 54293,
+            "patient_nbr": 28161720,
+            "encounter_id": 158263398,
+            "reconstruction_error": 13.595342636108398
+        },
+        {
+            "original_df_index": 54553,
+            "patient_nbr": 91960452,
+            "encounter_id": 158601762,
+            "reconstruction_error": 13.800368309020996
+        },
+        {
+            "original_df_index": 54760,
+            "patient_nbr": 25069554,
+            "encounter_id": 158966484,
+            "reconstruction_error": 19.989635467529297
+        },
+        {
+            "original_df_index": 54943,
+            "patient_nbr": 97550379,
+            "encounter_id": 159270720,
+            "reconstruction_error": 13.762272834777832
+        },
+        {
+            "original_df_index": 55045,
+            "patient_nbr": 41101785,
+            "encounter_id": 159512418,
+            "reconstruction_error": 17.427188873291016
+        },
+        {
+            "original_df_index": 55212,
+            "patient_nbr": 84784842,
+            "encounter_id": 159828870,
+            "reconstruction_error": 14.62061882019043
+        },
+        {
+            "original_df_index": 56031,
+            "patient_nbr": 41100858,
+            "encounter_id": 161286804,
+            "reconstruction_error": 17.868391036987305
+        },
+        {
+            "original_df_index": 56060,
+            "patient_nbr": 77536260,
+            "encounter_id": 161350758,
+            "reconstruction_error": 21.60257339477539
+        },
+        {
+            "original_df_index": 56372,
+            "patient_nbr": 101666475,
+            "encounter_id": 161946444,
+            "reconstruction_error": 14.769824981689453
+        },
+        {
+            "original_df_index": 57092,
+            "patient_nbr": 59629239,
+            "encounter_id": 163271460,
+            "reconstruction_error": 17.14093017578125
+        },
+        {
+            "original_df_index": 57188,
+            "patient_nbr": 23237658,
+            "encounter_id": 163450164,
+            "reconstruction_error": 17.333831787109375
+        },
+        {
+            "original_df_index": 57489,
+            "patient_nbr": 70601634,
+            "encounter_id": 163885506,
+            "reconstruction_error": 17.105533599853516
+        },
+        {
+            "original_df_index": 57562,
+            "patient_nbr": 57776706,
+            "encounter_id": 164048106,
+            "reconstruction_error": 14.690966606140137
+        },
+        {
+            "original_df_index": 57598,
+            "patient_nbr": 59651595,
+            "encounter_id": 164148594,
+            "reconstruction_error": 16.25191879272461
+        },
+        {
+            "original_df_index": 57699,
+            "patient_nbr": 59656860,
+            "encounter_id": 164302866,
+            "reconstruction_error": 18.489215850830078
+        },
+        {
+            "original_df_index": 57825,
+            "patient_nbr": 40761162,
+            "encounter_id": 164527560,
+            "reconstruction_error": 16.42852020263672
+        },
+        {
+            "original_df_index": 58661,
+            "patient_nbr": 43895205,
+            "encounter_id": 165979302,
+            "reconstruction_error": 15.292516708374023
+        },
+        {
+            "original_df_index": 58825,
+            "patient_nbr": 86799906,
+            "encounter_id": 166243470,
+            "reconstruction_error": 14.53814697265625
+        },
+        {
+            "original_df_index": 59421,
+            "patient_nbr": 96616809,
+            "encounter_id": 167217042,
+            "reconstruction_error": 13.825971603393555
+        },
+        {
+            "original_df_index": 59463,
+            "patient_nbr": 39665484,
+            "encounter_id": 167293332,
+            "reconstruction_error": 13.733222961425781
+        },
+        {
+            "original_df_index": 59934,
+            "patient_nbr": 48611979,
+            "encounter_id": 168258006,
+            "reconstruction_error": 14.339835166931152
+        },
+        {
+            "original_df_index": 59946,
+            "patient_nbr": 105353757,
+            "encounter_id": 168273144,
+            "reconstruction_error": 17.77410888671875
+        },
+        {
+            "original_df_index": 60061,
+            "patient_nbr": 100149210,
+            "encounter_id": 168461442,
+            "reconstruction_error": 13.66572380065918
+        },
+        {
+            "original_df_index": 60637,
+            "patient_nbr": 106190577,
+            "encounter_id": 169731906,
+            "reconstruction_error": 13.492240905761719
+        },
+        {
+            "original_df_index": 60719,
+            "patient_nbr": 38603817,
+            "encounter_id": 169940550,
+            "reconstruction_error": 13.556357383728027
+        },
+        {
+            "original_df_index": 63476,
+            "patient_nbr": 56739105,
+            "encounter_id": 176561586,
+            "reconstruction_error": 18.059722900390625
+        },
+        {
+            "original_df_index": 63925,
+            "patient_nbr": 43508961,
+            "encounter_id": 177936342,
+            "reconstruction_error": 14.253883361816406
+        },
+        {
+            "original_df_index": 64021,
+            "patient_nbr": 92434806,
+            "encounter_id": 178225662,
+            "reconstruction_error": 14.306975364685059
+        },
+        {
+            "original_df_index": 64140,
+            "patient_nbr": 74638566,
+            "encounter_id": 178506066,
+            "reconstruction_error": 13.867452621459961
+        },
+        {
+            "original_df_index": 64484,
+            "patient_nbr": 59359923,
+            "encounter_id": 179409210,
+            "reconstruction_error": 15.731246948242188
+        },
+        {
+            "original_df_index": 64779,
+            "patient_nbr": 109279710,
+            "encounter_id": 180278112,
+            "reconstruction_error": 15.922688484191895
+        },
+        {
+            "original_df_index": 65144,
+            "patient_nbr": 60427188,
+            "encounter_id": 181495254,
+            "reconstruction_error": 14.798555374145508
+        },
+        {
+            "original_df_index": 65227,
+            "patient_nbr": 110560509,
+            "encounter_id": 181784898,
+            "reconstruction_error": 13.954967498779297
+        },
+        {
+            "original_df_index": 65363,
+            "patient_nbr": 113911947,
+            "encounter_id": 182168148,
+            "reconstruction_error": 13.545156478881836
+        },
+        {
+            "original_df_index": 65760,
+            "patient_nbr": 23360301,
+            "encounter_id": 183573924,
+            "reconstruction_error": 13.419451713562012
+        },
+        {
+            "original_df_index": 65930,
+            "patient_nbr": 97002135,
+            "encounter_id": 184056168,
+            "reconstruction_error": 14.808489799499512
+        },
+        {
+            "original_df_index": 65979,
+            "patient_nbr": 59983740,
+            "encounter_id": 184171860,
+            "reconstruction_error": 13.444007873535156
+        },
+        {
+            "original_df_index": 66014,
+            "patient_nbr": 89472402,
+            "encounter_id": 184277634,
+            "reconstruction_error": 13.757689476013184
+        },
+        {
+            "original_df_index": 66417,
+            "patient_nbr": 109448541,
+            "encounter_id": 185526690,
+            "reconstruction_error": 17.472639083862305
+        },
+        {
+            "original_df_index": 66610,
+            "patient_nbr": 59557320,
+            "encounter_id": 186143610,
+            "reconstruction_error": 13.823880195617676
+        },
+        {
+            "original_df_index": 66618,
+            "patient_nbr": 109045620,
+            "encounter_id": 186212508,
+            "reconstruction_error": 16.58017349243164
+        },
+        {
+            "original_df_index": 67223,
+            "patient_nbr": 60086475,
+            "encounter_id": 188624280,
+            "reconstruction_error": 15.791738510131836
+        },
+        {
+            "original_df_index": 67281,
+            "patient_nbr": 90312282,
+            "encounter_id": 188727324,
+            "reconstruction_error": 14.600275993347168
+        },
+        {
+            "original_df_index": 67312,
+            "patient_nbr": 65882772,
+            "encounter_id": 188866116,
+            "reconstruction_error": 13.3234224319458
+        },
+        {
+            "original_df_index": 67551,
+            "patient_nbr": 44169111,
+            "encounter_id": 189726546,
+            "reconstruction_error": 15.676319122314453
+        },
+        {
+            "original_df_index": 67909,
+            "patient_nbr": 91609128,
+            "encounter_id": 191029188,
+            "reconstruction_error": 13.584098815917969
+        },
+        {
+            "original_df_index": 68497,
+            "patient_nbr": 31510116,
+            "encounter_id": 193530360,
+            "reconstruction_error": 17.36301040649414
+        },
+        {
+            "original_df_index": 68741,
+            "patient_nbr": 84519702,
+            "encounter_id": 194510334,
+            "reconstruction_error": 14.698190689086914
+        },
+        {
+            "original_df_index": 68804,
+            "patient_nbr": 38603817,
+            "encounter_id": 194641818,
+            "reconstruction_error": 14.79317855834961
+        },
+        {
+            "original_df_index": 68812,
+            "patient_nbr": 97812549,
+            "encounter_id": 194648112,
+            "reconstruction_error": 21.836301803588867
+        },
+        {
+            "original_df_index": 68834,
+            "patient_nbr": 103547808,
+            "encounter_id": 194775474,
+            "reconstruction_error": 13.43630599975586
+        },
+        {
+            "original_df_index": 69208,
+            "patient_nbr": 42892227,
+            "encounter_id": 196431276,
+            "reconstruction_error": 16.736637115478516
+        },
+        {
+            "original_df_index": 69245,
+            "patient_nbr": 85612563,
+            "encounter_id": 196536198,
+            "reconstruction_error": 19.73420524597168
+        },
+        {
+            "original_df_index": 69753,
+            "patient_nbr": 114845355,
+            "encounter_id": 198961626,
+            "reconstruction_error": 15.012568473815918
+        },
+        {
+            "original_df_index": 70360,
+            "patient_nbr": 108254340,
+            "encounter_id": 201652308,
+            "reconstruction_error": 14.301594734191895
+        },
+        {
+            "original_df_index": 70437,
+            "patient_nbr": 84866814,
+            "encounter_id": 202082274,
+            "reconstruction_error": 14.579751968383789
+        },
+        {
+            "original_df_index": 70561,
+            "patient_nbr": 74522808,
+            "encounter_id": 202749348,
+            "reconstruction_error": 16.102739334106445
+        },
+        {
+            "original_df_index": 72168,
+            "patient_nbr": 67508046,
+            "encounter_id": 210627492,
+            "reconstruction_error": 21.083215713500977
+        },
+        {
+            "original_df_index": 72313,
+            "patient_nbr": 58796532,
+            "encounter_id": 211373802,
+            "reconstruction_error": 16.422216415405273
+        },
+        {
+            "original_df_index": 72381,
+            "patient_nbr": 42582393,
+            "encounter_id": 211756278,
+            "reconstruction_error": 13.965775489807129
+        },
+        {
+            "original_df_index": 72532,
+            "patient_nbr": 60443478,
+            "encounter_id": 212395890,
+            "reconstruction_error": 20.245967864990234
+        },
+        {
+            "original_df_index": 72592,
+            "patient_nbr": 42161382,
+            "encounter_id": 212707770,
+            "reconstruction_error": 13.40540885925293
+        },
+        {
+            "original_df_index": 72605,
+            "patient_nbr": 67466133,
+            "encounter_id": 212760690,
+            "reconstruction_error": 14.42581844329834
+        },
+        {
+            "original_df_index": 73291,
+            "patient_nbr": 85146309,
+            "encounter_id": 216223410,
+            "reconstruction_error": 19.721099853515625
+        },
+        {
+            "original_df_index": 74304,
+            "patient_nbr": 44277264,
+            "encounter_id": 221062998,
+            "reconstruction_error": 14.9985933303833
+        },
+        {
+            "original_df_index": 74519,
+            "patient_nbr": 60592752,
+            "encounter_id": 221903562,
+            "reconstruction_error": 22.491127014160156
+        },
+        {
+            "original_df_index": 74895,
+            "patient_nbr": 84773808,
+            "encounter_id": 223708698,
+            "reconstruction_error": 14.510332107543945
+        },
+        {
+            "original_df_index": 75323,
+            "patient_nbr": 89123733,
+            "encounter_id": 225715068,
+            "reconstruction_error": 13.973176956176758
+        },
+        {
+            "original_df_index": 75773,
+            "patient_nbr": 97666506,
+            "encounter_id": 227828244,
+            "reconstruction_error": 15.275832176208496
+        },
+        {
+            "original_df_index": 75804,
+            "patient_nbr": 111789270,
+            "encounter_id": 228030162,
+            "reconstruction_error": 17.141111373901367
+        },
+        {
+            "original_df_index": 75836,
+            "patient_nbr": 60678675,
+            "encounter_id": 228218310,
+            "reconstruction_error": 16.741867065429688
+        },
+        {
+            "original_df_index": 75909,
+            "patient_nbr": 54784998,
+            "encounter_id": 228377964,
+            "reconstruction_error": 13.493714332580566
+        },
+        {
+            "original_df_index": 75941,
+            "patient_nbr": 32851701,
+            "encounter_id": 228586038,
+            "reconstruction_error": 14.437644958496094
+        },
+        {
+            "original_df_index": 76509,
+            "patient_nbr": 99978417,
+            "encounter_id": 230895030,
+            "reconstruction_error": 13.723672866821289
+        },
+        {
+            "original_df_index": 76848,
+            "patient_nbr": 85349709,
+            "encounter_id": 232367208,
+            "reconstruction_error": 14.303454399108887
+        },
+        {
+            "original_df_index": 77027,
+            "patient_nbr": 49851648,
+            "encounter_id": 233280690,
+            "reconstruction_error": 16.066421508789062
+        },
+        {
+            "original_df_index": 77181,
+            "patient_nbr": 56001339,
+            "encounter_id": 233928726,
+            "reconstruction_error": 13.456855773925781
+        },
+        {
+            "original_df_index": 77324,
+            "patient_nbr": 100593837,
+            "encounter_id": 234700656,
+            "reconstruction_error": 15.959582328796387
+        },
+        {
+            "original_df_index": 77444,
+            "patient_nbr": 41700420,
+            "encounter_id": 235129836,
+            "reconstruction_error": 13.406732559204102
+        },
+        {
+            "original_df_index": 77675,
+            "patient_nbr": 56001339,
+            "encounter_id": 236182992,
+            "reconstruction_error": 14.510086059570312
+        },
+        {
+            "original_df_index": 78007,
+            "patient_nbr": 88204113,
+            "encounter_id": 237597642,
+            "reconstruction_error": 16.243240356445312
+        },
+        {
+            "original_df_index": 78080,
+            "patient_nbr": 44507394,
+            "encounter_id": 237923064,
+            "reconstruction_error": 13.468473434448242
+        },
+        {
+            "original_df_index": 79130,
+            "patient_nbr": 93530106,
+            "encounter_id": 242533116,
+            "reconstruction_error": 14.616264343261719
+        },
+        {
+            "original_df_index": 79431,
+            "patient_nbr": 97178913,
+            "encounter_id": 243800118,
+            "reconstruction_error": 14.662156105041504
+        },
+        {
+            "original_df_index": 79451,
+            "patient_nbr": 62352252,
+            "encounter_id": 243907878,
+            "reconstruction_error": 14.44154167175293
+        },
+        {
+            "original_df_index": 79799,
+            "patient_nbr": 86696181,
+            "encounter_id": 245364942,
+            "reconstruction_error": 15.375090599060059
+        },
+        {
+            "original_df_index": 79972,
+            "patient_nbr": 90199422,
+            "encounter_id": 245915568,
+            "reconstruction_error": 17.50704574584961
+        },
+        {
+            "original_df_index": 80223,
+            "patient_nbr": 78004143,
+            "encounter_id": 247048248,
+            "reconstruction_error": 15.291467666625977
+        },
+        {
+            "original_df_index": 80302,
+            "patient_nbr": 59556501,
+            "encounter_id": 247391886,
+            "reconstruction_error": 15.5242919921875
+        },
+        {
+            "original_df_index": 80454,
+            "patient_nbr": 89881488,
+            "encounter_id": 248115630,
+            "reconstruction_error": 13.971773147583008
+        },
+        {
+            "original_df_index": 80823,
+            "patient_nbr": 44247879,
+            "encounter_id": 249717612,
+            "reconstruction_error": 15.23666000366211
+        },
+        {
+            "original_df_index": 81076,
+            "patient_nbr": 83020500,
+            "encounter_id": 250678158,
+            "reconstruction_error": 16.290544509887695
+        },
+        {
+            "original_df_index": 81099,
+            "patient_nbr": 85228254,
+            "encounter_id": 250902186,
+            "reconstruction_error": 15.956308364868164
+        },
+        {
+            "original_df_index": 81150,
+            "patient_nbr": 107545347,
+            "encounter_id": 251028366,
+            "reconstruction_error": 15.021421432495117
+        },
+        {
+            "original_df_index": 81253,
+            "patient_nbr": 92001672,
+            "encounter_id": 251377884,
+            "reconstruction_error": 17.15062141418457
+        },
+        {
+            "original_df_index": 81386,
+            "patient_nbr": 44637390,
+            "encounter_id": 252153528,
+            "reconstruction_error": 18.407657623291016
+        },
+        {
+            "original_df_index": 81837,
+            "patient_nbr": 58127040,
+            "encounter_id": 254173176,
+            "reconstruction_error": 16.351041793823242
+        },
+        {
+            "original_df_index": 82172,
+            "patient_nbr": 95580126,
+            "encounter_id": 255751602,
+            "reconstruction_error": 17.90325164794922
+        },
+        {
+            "original_df_index": 82185,
+            "patient_nbr": 100283751,
+            "encounter_id": 255778314,
+            "reconstruction_error": 13.621231079101562
+        },
+        {
+            "original_df_index": 82503,
+            "patient_nbr": 95300784,
+            "encounter_id": 257066964,
+            "reconstruction_error": 21.948471069335938
+        },
+        {
+            "original_df_index": 82547,
+            "patient_nbr": 106865694,
+            "encounter_id": 257210244,
+            "reconstruction_error": 14.478643417358398
+        },
+        {
+            "original_df_index": 83055,
+            "patient_nbr": 98584524,
+            "encounter_id": 259427496,
+            "reconstruction_error": 17.870389938354492
+        },
+        {
+            "original_df_index": 83098,
+            "patient_nbr": 98590797,
+            "encounter_id": 259652454,
+            "reconstruction_error": 15.094913482666016
+        },
+        {
+            "original_df_index": 83282,
+            "patient_nbr": 101159181,
+            "encounter_id": 260513214,
+            "reconstruction_error": 13.830587387084961
+        },
+        {
+            "original_df_index": 83375,
+            "patient_nbr": 93662784,
+            "encounter_id": 260978136,
+            "reconstruction_error": 14.643625259399414
+        },
+        {
+            "original_df_index": 83433,
+            "patient_nbr": 97761447,
+            "encounter_id": 261242142,
+            "reconstruction_error": 13.647793769836426
+        },
+        {
+            "original_df_index": 83616,
+            "patient_nbr": 103686129,
+            "encounter_id": 262182792,
+            "reconstruction_error": 15.546109199523926
+        },
+        {
+            "original_df_index": 83909,
+            "patient_nbr": 86685336,
+            "encounter_id": 263452044,
+            "reconstruction_error": 13.859893798828125
+        },
+        {
+            "original_df_index": 83952,
+            "patient_nbr": 84756375,
+            "encounter_id": 263690028,
+            "reconstruction_error": 16.06060028076172
+        },
+        {
+            "original_df_index": 84189,
+            "patient_nbr": 96436584,
+            "encounter_id": 264827130,
+            "reconstruction_error": 13.626991271972656
+        },
+        {
+            "original_df_index": 84203,
+            "patient_nbr": 32752971,
+            "encounter_id": 264873792,
+            "reconstruction_error": 14.777925491333008
+        },
+        {
+            "original_df_index": 84229,
+            "patient_nbr": 106335486,
+            "encounter_id": 265056180,
+            "reconstruction_error": 14.404478073120117
+        },
+        {
+            "original_df_index": 84425,
+            "patient_nbr": 100689732,
+            "encounter_id": 265941342,
+            "reconstruction_error": 15.088003158569336
+        },
+        {
+            "original_df_index": 84496,
+            "patient_nbr": 85116564,
+            "encounter_id": 266363736,
+            "reconstruction_error": 14.79957103729248
+        },
+        {
+            "original_df_index": 84586,
+            "patient_nbr": 67727916,
+            "encounter_id": 266783418,
+            "reconstruction_error": 13.602460861206055
+        },
+        {
+            "original_df_index": 84697,
+            "patient_nbr": 45615195,
+            "encounter_id": 267315678,
+            "reconstruction_error": 19.57902717590332
+        },
+        {
+            "original_df_index": 84771,
+            "patient_nbr": 58802535,
+            "encounter_id": 267691356,
+            "reconstruction_error": 13.669880867004395
+        },
+        {
+            "original_df_index": 84803,
+            "patient_nbr": 85027545,
+            "encounter_id": 267790770,
+            "reconstruction_error": 15.156169891357422
+        },
+        {
+            "original_df_index": 84849,
+            "patient_nbr": 105241860,
+            "encounter_id": 268068378,
+            "reconstruction_error": 13.356365203857422
+        },
+        {
+            "original_df_index": 84922,
+            "patient_nbr": 62703000,
+            "encounter_id": 268513722,
+            "reconstruction_error": 18.158966064453125
+        },
+        {
+            "original_df_index": 85027,
+            "patient_nbr": 109448541,
+            "encounter_id": 268862754,
+            "reconstruction_error": 18.74239730834961
+        },
+        {
+            "original_df_index": 85129,
+            "patient_nbr": 39348711,
+            "encounter_id": 269371260,
+            "reconstruction_error": 18.22286605834961
+        },
+        {
+            "original_df_index": 85174,
+            "patient_nbr": 60685902,
+            "encounter_id": 269534004,
+            "reconstruction_error": 13.557184219360352
+        },
+        {
+            "original_df_index": 85647,
+            "patient_nbr": 111947535,
+            "encounter_id": 271482342,
+            "reconstruction_error": 14.807666778564453
+        },
+        {
+            "original_df_index": 85807,
+            "patient_nbr": 60351552,
+            "encounter_id": 272086296,
+            "reconstruction_error": 13.448709487915039
+        },
+        {
+            "original_df_index": 86061,
+            "patient_nbr": 32796639,
+            "encounter_id": 273212928,
+            "reconstruction_error": 14.031349182128906
+        },
+        {
+            "original_df_index": 86135,
+            "patient_nbr": 90847035,
+            "encounter_id": 273615240,
+            "reconstruction_error": 41.42573547363281
+        },
+        {
+            "original_df_index": 86158,
+            "patient_nbr": 39348711,
+            "encounter_id": 273743418,
+            "reconstruction_error": 20.78558349609375
+        },
+        {
+            "original_df_index": 86276,
+            "patient_nbr": 43327089,
+            "encounter_id": 274394178,
+            "reconstruction_error": 13.67206859588623
+        },
+        {
+            "original_df_index": 86370,
+            "patient_nbr": 84387231,
+            "encounter_id": 274580112,
+            "reconstruction_error": 14.106855392456055
+        },
+        {
+            "original_df_index": 86904,
+            "patient_nbr": 114052266,
+            "encounter_id": 276711594,
+            "reconstruction_error": 13.47892951965332
+        },
+        {
+            "original_df_index": 87049,
+            "patient_nbr": 59567193,
+            "encounter_id": 277467024,
+            "reconstruction_error": 16.164325714111328
+        },
+        {
+            "original_df_index": 87053,
+            "patient_nbr": 92122668,
+            "encounter_id": 277477416,
+            "reconstruction_error": 20.895038604736328
+        },
+        {
+            "original_df_index": 87274,
+            "patient_nbr": 39348711,
+            "encounter_id": 278298888,
+            "reconstruction_error": 15.576094627380371
+        },
+        {
+            "original_df_index": 87461,
+            "patient_nbr": 59651595,
+            "encounter_id": 279312150,
+            "reconstruction_error": 16.33269500732422
+        },
+        {
+            "original_df_index": 87786,
+            "patient_nbr": 40952970,
+            "encounter_id": 280947774,
+            "reconstruction_error": 15.094391822814941
+        },
+        {
+            "original_df_index": 87861,
+            "patient_nbr": 35058762,
+            "encounter_id": 281284092,
+            "reconstruction_error": 14.085100173950195
+        },
+        {
+            "original_df_index": 88000,
+            "patient_nbr": 34719363,
+            "encounter_id": 282073758,
+            "reconstruction_error": 14.794859886169434
+        },
+        {
+            "original_df_index": 88894,
+            "patient_nbr": 38599560,
+            "encounter_id": 286531842,
+            "reconstruction_error": 14.380353927612305
+        },
+        {
+            "original_df_index": 89025,
+            "patient_nbr": 37719162,
+            "encounter_id": 287122584,
+            "reconstruction_error": 15.795105934143066
+        },
+        {
+            "original_df_index": 89279,
+            "patient_nbr": 39304944,
+            "encounter_id": 288244230,
+            "reconstruction_error": 14.400224685668945
+        },
+        {
+            "original_df_index": 90171,
+            "patient_nbr": 52311078,
+            "encounter_id": 292893522,
+            "reconstruction_error": 13.546319961547852
+        },
+        {
+            "original_df_index": 90198,
+            "patient_nbr": 76351653,
+            "encounter_id": 293093430,
+            "reconstruction_error": 16.09905433654785
+        },
+        {
+            "original_df_index": 90311,
+            "patient_nbr": 54880227,
+            "encounter_id": 293808074,
+            "reconstruction_error": 17.981782913208008
+        },
+        {
+            "original_df_index": 90538,
+            "patient_nbr": 80913897,
+            "encounter_id": 296726204,
+            "reconstruction_error": 14.614189147949219
+        },
+        {
+            "original_df_index": 90901,
+            "patient_nbr": 41958675,
+            "encounter_id": 302470490,
+            "reconstruction_error": 14.87211799621582
+        },
+        {
+            "original_df_index": 91129,
+            "patient_nbr": 49572036,
+            "encounter_id": 305434448,
+            "reconstruction_error": 14.743070602416992
+        },
+        {
+            "original_df_index": 91212,
+            "patient_nbr": 141575522,
+            "encounter_id": 306147734,
+            "reconstruction_error": 13.701410293579102
+        },
+        {
+            "original_df_index": 91254,
+            "patient_nbr": 137748263,
+            "encounter_id": 307175348,
+            "reconstruction_error": 13.611775398254395
+        },
+        {
+            "original_df_index": 91258,
+            "patient_nbr": 95794218,
+            "encounter_id": 307185122,
+            "reconstruction_error": 16.156856536865234
+        },
+        {
+            "original_df_index": 91386,
+            "patient_nbr": 141501551,
+            "encounter_id": 308496164,
+            "reconstruction_error": 24.013402938842773
+        },
+        {
+            "original_df_index": 91411,
+            "patient_nbr": 174582122,
+            "encounter_id": 309011678,
+            "reconstruction_error": 23.319721221923828
+        },
+        {
+            "original_df_index": 91470,
+            "patient_nbr": 112694040,
+            "encounter_id": 309640580,
+            "reconstruction_error": 18.440649032592773
+        },
+        {
+            "original_df_index": 91526,
+            "patient_nbr": 137145308,
+            "encounter_id": 310700186,
+            "reconstruction_error": 13.569275856018066
+        },
+        {
+            "original_df_index": 91623,
+            "patient_nbr": 73046421,
+            "encounter_id": 311878406,
+            "reconstruction_error": 13.408567428588867
+        },
+        {
+            "original_df_index": 91709,
+            "patient_nbr": 137145308,
+            "encounter_id": 313055738,
+            "reconstruction_error": 18.012859344482422
+        },
+        {
+            "original_df_index": 92599,
+            "patient_nbr": 33379713,
+            "encounter_id": 324310208,
+            "reconstruction_error": 16.471355438232422
+        },
+        {
+            "original_df_index": 92649,
+            "patient_nbr": 175733744,
+            "encounter_id": 324985064,
+            "reconstruction_error": 18.868711471557617
+        },
+        {
+            "original_df_index": 92835,
+            "patient_nbr": 41684229,
+            "encounter_id": 327797204,
+            "reconstruction_error": 17.596895217895508
+        },
+        {
+            "original_df_index": 93008,
+            "patient_nbr": 101956869,
+            "encounter_id": 329682326,
+            "reconstruction_error": 13.784150123596191
+        },
+        {
+            "original_df_index": 93462,
+            "patient_nbr": 87280965,
+            "encounter_id": 336032834,
+            "reconstruction_error": 13.448885917663574
+        },
+        {
+            "original_df_index": 93815,
+            "patient_nbr": 141052001,
+            "encounter_id": 340749896,
+            "reconstruction_error": 17.988977432250977
+        },
+        {
+            "original_df_index": 94079,
+            "patient_nbr": 185480834,
+            "encounter_id": 343755692,
+            "reconstruction_error": 14.934643745422363
+        },
+        {
+            "original_df_index": 94214,
+            "patient_nbr": 89710911,
+            "encounter_id": 345476894,
+            "reconstruction_error": 16.049514770507812
+        },
+        {
+            "original_df_index": 94229,
+            "patient_nbr": 38401083,
+            "encounter_id": 345515750,
+            "reconstruction_error": 15.56501293182373
+        },
+        {
+            "original_df_index": 94465,
+            "patient_nbr": 35512083,
+            "encounter_id": 348489308,
+            "reconstruction_error": 14.46528434753418
+        },
+        {
+            "original_df_index": 94513,
+            "patient_nbr": 123442457,
+            "encounter_id": 349118588,
+            "reconstruction_error": 17.0001220703125
+        },
+        {
+            "original_df_index": 94641,
+            "patient_nbr": 92402442,
+            "encounter_id": 350731718,
+            "reconstruction_error": 13.574506759643555
+        },
+        {
+            "original_df_index": 94779,
+            "patient_nbr": 138845912,
+            "encounter_id": 352515230,
+            "reconstruction_error": 14.077587127685547
+        },
+        {
+            "original_df_index": 95123,
+            "patient_nbr": 33379713,
+            "encounter_id": 357300890,
+            "reconstruction_error": 15.682952880859375
+        },
+        {
+            "original_df_index": 95212,
+            "patient_nbr": 141364049,
+            "encounter_id": 358995056,
+            "reconstruction_error": 14.156351089477539
+        },
+        {
+            "original_df_index": 95233,
+            "patient_nbr": 42432552,
+            "encounter_id": 359060864,
+            "reconstruction_error": 14.306909561157227
+        },
+        {
+            "original_df_index": 95419,
+            "patient_nbr": 82176768,
+            "encounter_id": 361436744,
+            "reconstruction_error": 13.695351600646973
+        },
+        {
+            "original_df_index": 95506,
+            "patient_nbr": 164742737,
+            "encounter_id": 362610032,
+            "reconstruction_error": 13.830789566040039
+        },
+        {
+            "original_df_index": 95528,
+            "patient_nbr": 138786845,
+            "encounter_id": 363125522,
+            "reconstruction_error": 14.062767028808594
+        },
+        {
+            "original_df_index": 95549,
+            "patient_nbr": 60043833,
+            "encounter_id": 363203318,
+            "reconstruction_error": 13.632387161254883
+        },
+        {
+            "original_df_index": 96062,
+            "patient_nbr": 33379713,
+            "encounter_id": 370274210,
+            "reconstruction_error": 18.44086265563965
+        },
+        {
+            "original_df_index": 96615,
+            "patient_nbr": 98660061,
+            "encounter_id": 377893598,
+            "reconstruction_error": 19.46672248840332
+        },
+        {
+            "original_df_index": 96844,
+            "patient_nbr": 138553565,
+            "encounter_id": 380897192,
+            "reconstruction_error": 14.96368408203125
+        },
+        {
+            "original_df_index": 97039,
+            "patient_nbr": 94983255,
+            "encounter_id": 383713412,
+            "reconstruction_error": 16.344532012939453
+        },
+        {
+            "original_df_index": 97229,
+            "patient_nbr": 134136140,
+            "encounter_id": 386093678,
+            "reconstruction_error": 15.45023250579834
+        },
+        {
+            "original_df_index": 97474,
+            "patient_nbr": 82176768,
+            "encounter_id": 389060378,
+            "reconstruction_error": 14.665148735046387
+        },
+        {
+            "original_df_index": 98128,
+            "patient_nbr": 68712966,
+            "encounter_id": 396768608,
+            "reconstruction_error": 15.925591468811035
+        },
+        {
+            "original_df_index": 98134,
+            "patient_nbr": 33379713,
+            "encounter_id": 396786194,
+            "reconstruction_error": 19.064285278320312
+        },
+        {
+            "original_df_index": 98166,
+            "patient_nbr": 94422375,
+            "encounter_id": 397319276,
+            "reconstruction_error": 15.939732551574707
+        },
+        {
+            "original_df_index": 98201,
+            "patient_nbr": 41617368,
+            "encounter_id": 397840886,
+            "reconstruction_error": 13.40153694152832
+        },
+        {
+            "original_df_index": 98213,
+            "patient_nbr": 41715972,
+            "encounter_id": 397869896,
+            "reconstruction_error": 15.879823684692383
+        },
+        {
+            "original_df_index": 98523,
+            "patient_nbr": 141423710,
+            "encounter_id": 401991242,
+            "reconstruction_error": 19.006328582763672
+        },
+        {
+            "original_df_index": 98595,
+            "patient_nbr": 139051067,
+            "encounter_id": 403114736,
+            "reconstruction_error": 16.07528305053711
+        },
+        {
+            "original_df_index": 98776,
+            "patient_nbr": 82735506,
+            "encounter_id": 405003686,
+            "reconstruction_error": 13.528022766113281
+        },
+        {
+            "original_df_index": 98809,
+            "patient_nbr": 94422375,
+            "encounter_id": 405545654,
+            "reconstruction_error": 15.528074264526367
+        },
+        {
+            "original_df_index": 98911,
+            "patient_nbr": 33379713,
+            "encounter_id": 406781108,
+            "reconstruction_error": 17.281932830810547
+        },
+        {
+            "original_df_index": 99319,
+            "patient_nbr": 130640990,
+            "encounter_id": 411956210,
+            "reconstruction_error": 13.48383903503418
+        },
+        {
+            "original_df_index": 99403,
+            "patient_nbr": 140977418,
+            "encounter_id": 413130974,
+            "reconstruction_error": 13.888175964355469
+        },
+        {
+            "original_df_index": 99577,
+            "patient_nbr": 181100804,
+            "encounter_id": 414954410,
+            "reconstruction_error": 14.626398086547852
+        },
+        {
+            "original_df_index": 99883,
+            "patient_nbr": 41432517,
+            "encounter_id": 418978292,
+            "reconstruction_error": 16.319541931152344
+        },
+        {
+            "original_df_index": 99916,
+            "patient_nbr": 134891717,
+            "encounter_id": 419114912,
+            "reconstruction_error": 15.115822792053223
+        },
+        {
+            "original_df_index": 100401,
+            "patient_nbr": 95393196,
+            "encounter_id": 425471630,
+            "reconstruction_error": 16.810619354248047
+        },
+        {
+            "original_df_index": 100427,
+            "patient_nbr": 85171977,
+            "encounter_id": 425551706,
+            "reconstruction_error": 13.62024974822998
+        },
+        {
+            "original_df_index": 100436,
+            "patient_nbr": 95205456,
+            "encounter_id": 425596586,
+            "reconstruction_error": 16.65814971923828
+        },
+        {
+            "original_df_index": 100670,
+            "patient_nbr": 138505577,
+            "encounter_id": 429082760,
+            "reconstruction_error": 17.25912857055664
+        },
+        {
+            "original_df_index": 100840,
+            "patient_nbr": 33379713,
+            "encounter_id": 431445866,
+            "reconstruction_error": 14.425484657287598
+        },
+        {
+            "original_df_index": 101023,
+            "patient_nbr": 54910233,
+            "encounter_id": 433812200,
+            "reconstruction_error": 13.759963035583496
+        },
+        {
+            "original_df_index": 101039,
+            "patient_nbr": 34593687,
+            "encounter_id": 434279492,
+            "reconstruction_error": 16.14767074584961
+        },
+        {
+            "original_df_index": 101122,
+            "patient_nbr": 185869661,
+            "encounter_id": 435043790,
+            "reconstruction_error": 15.548053741455078
+        },
+        {
+            "original_df_index": 101186,
+            "patient_nbr": 31492026,
+            "encounter_id": 436129910,
+            "reconstruction_error": 17.29846954345703
+        },
+        {
+            "original_df_index": 101235,
+            "patient_nbr": 38571255,
+            "encounter_id": 436716620,
+            "reconstruction_error": 14.55484390258789
+        },
+        {
+            "original_df_index": 101342,
+            "patient_nbr": 91167804,
+            "encounter_id": 437969054,
+            "reconstruction_error": 14.370115280151367
+        }
+    ]
+}
