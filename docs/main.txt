@@ -1,0 +1,179 @@
+Analysis Report: Sequential Modeling Pipeline for Diabetes Encounter Data
+
+1. Introduction & Problem Statement
+
+This report details the architecture and implementation of a deep learning pipeline designed to analyze sequential patient encounter data from the Health Facts Diabetes dataset. The primary challenge lies in the data's inherent structure: patients have multiple hospital encounters over time, meaning observations are not independent and identically distributed (non-IID). Standard tabular machine learning models fail to capture the crucial temporal dependencies and evolution of a patient's condition across visits.
+
+The objectives of this pipeline are twofold:
+
+Outlier Detection: To identify anomalous patient encounter sequences or individual visits that deviate significantly from learned patterns, potentially indicating data quality issues, unique patient subgroups, or unusual clinical events.
+
+Readmission Prediction: To predict, for each hospital encounter, the likelihood of readmission across three categories (NO, >30 days, <30 days), leveraging the patient's complete visit history up to that point.
+
+The implemented solution utilizes a Recurrent Neural Network (RNN) based Autoencoder (AE) architecture within a PyTorch framework, enabling effective representation learning from sequential data and facilitating both outlier detection and prediction tasks through component reuse.
+
+2. Data Handling Strategy
+
+Recognizing the sequential nature of the data is paramount. The pipeline incorporates specific strategies:
+
+2.1. Initial Preprocessing (preprocessing/):
+
+Role: Cleans the raw tabular data, handles explicitly defined missing values (e.g., '?'), performs initial feature engineering (ordinal encoding for age, readmitted; treatment mapping), imputes missing race values (using patient history ffill/bfill followed by an 'Unknown' category), and applies one-hot encoding (OHE) to low-cardinality nominal features (gender, admission_type_id, imputed race). It also applies label encoding and generates pre-computed embeddings (using SpaCy and t-SNE) specifically for diagnosis codes (diag_1, diag_2, diag_3), saving these artifacts for reuse. Other specified categorical columns (discharge_disposition_id, admission_source_id) are also label encoded here.
+
+Justification: Standardizes data types, handles missingness appropriately for different features (imputation for race, '0' for missing diagnoses), and converts categorical data into numerical formats suitable for downstream processing, while leveraging external knowledge via pre-computed diagnosis embeddings.
+
+2.2. Train/Validation/Test Split (main_workflow.py::split_data):
+
+Role: Divides the dataset into training, validation, and testing sets before sequence generation.
+
+Method: Utilizes sklearn.model_selection.GroupShuffleSplit with PATIENT_ID_COL as the grouping key.
+
+Justification: This is critical for sequence data with repeated subjects. A standard random split would leak information by placing different visits from the same patient into different sets (e.g., training on visits 1-3 and validating on visit 4 of the same patient). Grouping by patient ensures that all encounters for a given patient reside exclusively within one set (train, validation, or test), providing a realistic evaluation of the model's ability to generalize to unseen patient histories.
+
+2.3. Sequence Preparation (data_preparation/):
+
+Role: Transforms the processed tabular DataFrame into sequences suitable for RNN input. This is handled by SequenceDataPreparer, PatientSequenceDataset, and pad_collate_fn.
+
+Process:
+
+Scaling: Applies StandardScaler (fit only on the training set numerical features, saved via SCALER_PATH) to standardize numerical inputs (mean=0, std=1). Justification: Prevents features with large ranges from dominating model learning and aids gradient descent convergence.
+
+Grouping & Sorting: Groups the DataFrame by PATIENT_ID_COL and sorts visits chronologically using ENCOUNTER_ID_COL. Justification: Preserves the essential temporal order for the RNN.
+
+Feature Structuring: For each visit, features are organized into distinct categories (numerical/OHE, labels for learned embeddings, labels for pre-computed embeddings) within a dictionary structure. Justification: Facilitates easy input handling within the PyTorch model, particularly for routing labels to the correct embedding layers.
+
+Sequence Creation: Aggregates the visit dictionaries into sequences (lists of dictionaries) per patient, along with corresponding target (readmitted) label sequences.
+
+Padding & Masking (pad_collate_fn): Within the DataLoader, sequences in each batch are padded to the length of the longest sequence in that batch (or MAX_SEQ_LENGTH if specified and truncation occurs). A corresponding boolean mask is generated. Justification: Creates rectangular tensors required for batch processing by RNNs and allows the model (and loss functions) to ignore computations on padded timesteps.
+
+Output: The DataLoader yields batches, where each batch is a dictionary containing padded tensors for each feature type, padded targets, the attention mask, original sequence lengths, and patient IDs.
+
+3. Modeling Architecture (modeling/)
+
+A modular architecture based on PyTorch nn.Module is employed, centered around an Encoder-Decoder structure.
+
+3.1. Embedding Layer (modeling.embeddings.EmbeddingManager):
+
+Role: Manages the conversion of integer labels for categorical features into dense vector representations (embeddings).
+
+Implementation: Initializes separate nn.Embedding layers for:
+
+Learned Embeddings: For features defined in LEARNED_EMB_COLS (e.g., discharge_disposition_id). These embeddings are trained from scratch alongside the main model. Dimensions are specified (e.g., OTHER_EMBEDDING_DIM).
+
+Pre-computed Embeddings: For diagnosis codes (PRECOMPUTED_EMB_COLS). The nn.Embedding layer weights are initialized from the loaded DIAG_EMBEDDINGS_PATH (.npy file). The FINETUNE_DIAG_EMBEDDINGS flag determines if these weights are frozen or updated during training.
+
+Forward Pass: Takes the batch dictionary, looks up the appropriate labels for each category, passes them through the corresponding nn.Embedding layer, and concatenates all resulting embedding vectors for each timestep.
+
+Justification: Provides a clean interface for handling mixed embedding strategies. Allows leveraging pre-trained knowledge (diagnoses) while learning representations for other categoricals. Concatenation creates a rich feature vector for the RNN.
+
+3.2. Encoder (modeling.encoder.EncoderRNN):
+
+Role: Processes the input sequence of visits and compresses the historical information into context-aware hidden states.
+
+Architecture: An LSTM (or GRU, based on USE_GRU) layer processes the sequence of concatenated input features (numerical + OHE + all embeddings) received from the EmbeddingManager. Dropout is applied for regularization.
+
+Input: Batch dictionary.
+
+Output:
+
+encoder_outputs: Hidden states for all timesteps (batch, seq_len, hidden_dim). Crucial for Attention and step-by-step prediction.
+
+encoder_final_hidden: The final hidden state (and cell state for LSTM) after processing the entire sequence (n_layers, batch, hidden_dim). Useful as a fixed-size patient embedding.
+
+Justification: LSTMs/GRUs are chosen for their ability to capture long-range dependencies in sequences, mitigating the vanishing gradient problem of simple RNNs.
+
+3.3. Attention Mechanism (modeling.attention.AdditiveAttention):
+
+Role: (Used by the Decoder in the AE setup) Allows the model to dynamically focus on the most relevant parts of the encoder's output sequence when generating the reconstruction (or prediction).
+
+Mechanism: Implements Additive (Bahdanau-style) attention. It calculates alignment scores based on a combination of the current decoder state (query) and all encoder output states (keys/values), normalized via Softmax. A context vector is computed as a weighted sum of encoder outputs based on these scores.
+
+Justification: Improves upon basic Seq2Seq models by overcoming the bottleneck of compressing the entire input sequence into a single fixed vector. Allows focusing on relevant past information regardless of its distance in the sequence, crucial for long patient histories.
+
+3.4. Decoder (modeling.decoder.DecoderRNN):
+
+Role: Used only during the Autoencoder pre-training phase. Aims to reconstruct the original input sequence based on the information provided by the encoder.
+
+Architecture: An LSTM/GRU layer receives the encoder_outputs and is initialized with encoder_final_hidden. If attention is used (USE_ATTENTION=True), it calculates a context vector (using AdditiveAttention) based on the decoder's evolving state (simplified in this AE implementation) and the encoder_outputs. The decoder's output and the context vector are combined and passed through a final linear layer (fc_out) to project back to the original input feature dimension for reconstruction.
+
+Justification: Forces the Encoder to learn compressed representations that retain sufficient information to rebuild the input sequence, making the Encoder a useful feature extractor.
+
+3.5. Autoencoder (modeling.autoencoder.Seq2SeqAE):
+
+Role: Combines the EncoderRNN and DecoderRNN into a single model for the unsupervised pre-training task.
+
+Forward Pass: Takes the input batch, passes it through the encoder, then passes the encoder outputs/state to the decoder to generate reconstructions.
+
+3.6. Prediction Head (modeling.prediction_head.PredictionHead):
+
+Role: A simple classifier placed on top of the Encoder's outputs for the downstream prediction task.
+
+Architecture: A single nn.Linear layer mapping the encoder's hidden dimension (HIDDEN_DIM) at each timestep to the number of target classes (output_dim=3 for multi-class readmission).
+
+Justification: Provides a lightweight mechanism to translate the learned sequential representations into task-specific predictions (readmission class logits).
+
+3.7. Predictor Model (modeling.predictor.PredictorModel):
+
+Role: Combines the potentially pre-trained EncoderRNN with the PredictionHead for the final supervised readmission prediction task.
+
+Forward Pass: Takes the input batch, passes it through the encoder to get per-timestep hidden states (encoder_outputs), and then passes these states through the prediction head to get per-timestep logits.
+
+4. Training Strategy (training/)
+
+A two-stage training process leverages transfer learning:
+
+4.1. Autoencoder Pre-training (AETrainer):
+
+Objective: Train the Seq2SeqAE model (Encoder + Decoder) to minimize the reconstruction error between its output and the original input sequence.
+
+Loss Function: Masked Mean Squared Error (MSE) or Mean Absolute Error (MAE) (nn.MSELoss(reduction='none') used). The mask ensures loss is only computed on non-padded parts of the sequence. The target for reconstruction is the concatenated vector of numerical/OHE features and all embeddings fed into the encoder.
+
+Outcome: A trained Encoder whose weights capture general patterns and dependencies in the visit sequences. Embeddings (both learned and potentially fine-tuned pre-computed ones) are also trained.
+
+4.2. Predictor Training (PredictorTrainer):
+
+Objective: Train the PredictorModel (Encoder + Prediction Head) to predict the readmitted status (3 classes).
+
+Initialization: The Encoder component is initialized with the weights learned during AE pre-training. The PREDICTOR_FINETUNE_ENCODER flag controls whether these weights are frozen or further updated (fine-tuned) during predictor training. The Prediction Head is initialized randomly.
+
+Loss Function: Masked Cross-Entropy Loss (nn.CrossEntropyLoss(reduction='none') used). It takes the raw logits from the Prediction Head and the integer target labels (0, 1, 2). The mask ensures loss is only computed for valid, non-padded timesteps.
+
+Outcome: A model specifically tuned to predict readmission, benefiting from the representations learned by the AE.
+
+4.3. Common Elements (BaseTrainer):
+
+Optimization: Adam/AdamW optimizer is used (AE_OPTIMIZER, PREDICTOR_OPTIMIZER).
+
+Learning Rate Scheduling: ReduceLROnPlateau adjusts the learning rate based on validation loss stagnation.
+
+Early Stopping: Training stops if validation loss doesn't improve for a set number of epochs (AE_EARLY_STOPPING_PATIENCE, PREDICTOR_EARLY_STOPPING_PATIENCE).
+
+Checkpointing: Saves the model state (best and latest) during training. The best model based on validation loss is loaded at the end.
+
+5. Analysis Workflow (analysis/)
+
+5.1. Outlier Detection (OutlierDetector):
+
+Initialization: Loads the trained AE model (or just the Encoder) and potentially a trained Isolation Forest model. Requires the SequenceDataPreparer.
+
+Visit-Level: Runs AE inference (_run_inference(mode='ae')). Calculates per-visit reconstruction MAE. Compares errors to a pre-calculated threshold (calculate_and_set_visit_threshold using training data errors and VISIT_ERROR_PERCENTILE). Flags visits exceeding the threshold. Logs a summary and saves detailed outlier information (patient/encounter ID, error) to JSON.
+
+Patient-Level: Runs Encoder inference (_run_inference(mode='encoder')) to get final hidden state embeddings. Trains an IsolationForest model on training set embeddings (train_isolation_forest). Predicts anomaly scores (decision_function) or flags (predict) for new patient embeddings. Logs a summary and saves details of outlier patients to JSON.
+
+Justification: Provides two complementary views of anomalies – specific unusual visits (high reconstruction error) and patients with generally abnormal trajectories (anomalous embeddings).
+
+5.2. Prediction & Evaluation (Predictor):
+
+Initialization: Loads the trained PredictorModel. Requires the SequenceDataPreparer.
+
+Inference (predict_bulk): Runs inference on batches of test data using the trained predictor model. Applies Softmax to the output logits to get class probabilities per timestep. Determines the predicted class using argmax. Maps probabilities and predictions back to the original DataFrame rows, handling padding/masking.
+
+Evaluation (evaluate): Takes the DataFrame containing true readmitted labels and the predicted_class. Calculates standard multi-class classification metrics (Accuracy, Confusion Matrix, Precision, Recall, F1-score via classification_report) considering only valid (non-padded) predictions. Logs results and saves them to JSON.
+
+Justification: Provides a robust evaluation of the model's predictive performance on unseen data using standard metrics suitable for multi-class problems.
+
+6. Conclusion
+
+This modular, two-stage sequential modeling pipeline provides a comprehensive and principled approach for analyzing the complex, time-dependent diabetes encounter data. By leveraging representation learning via an autoencoder and transfer learning for prediction, combined with careful data preparation (padding, masking, patient-level splitting) and appropriate evaluation, the system is well-equipped to identify meaningful outliers and generate accurate, causally consistent readmission predictions. The architecture is designed for clarity, maintainability, and future extension.
+
+A més de l’anàlisi a nivell de visita, també es contempla una detecció d’outliers a nivell de pacient. En aquest cas, es fa servir el vector ocult final generat per l’encoder (\texttt{encoder_final_hidden}), que resumeix tota la seqüència del pacient. Aquests vectors es projecten a un espai latent on es pot entrenar un model no supervisat com \textit{Isolation Forest} per identificar pacients amb trajectòries atípiques en relació amb el conjunt d’entrenament. Aquesta aproximació, més global, permet detectar trajectòries clíniques rares, independentment de si cada visita és individualment coherent.
