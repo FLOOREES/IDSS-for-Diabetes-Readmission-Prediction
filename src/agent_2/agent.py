@@ -5,7 +5,7 @@ import google.generativeai as genai
 from dotenv import load_dotenv
 
 load_dotenv()
-api_key = os.getenv("llm_key")
+api_key = os.getenv("gemini_key")
 
 print(api_key)
 
