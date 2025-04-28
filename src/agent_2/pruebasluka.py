@@ -1,8 +1,12 @@
 import os
 import google.generativeai as genai
+from dotenv import load_dotenv
 
-with open("src/agent/api_key.txt", "r") as file:
-    api_key = file.read().strip()
+# Carga las variables de entorno desde el archivo .env
+load_dotenv()
+api_key = os.getenv("llm_key")
+
+print(api_key)
 
 genai.configure(api_key=api_key)
 
