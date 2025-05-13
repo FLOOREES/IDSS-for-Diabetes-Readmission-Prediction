@@ -1,8 +1,9 @@
 import os
 import glob
+import shutil
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import Chroma
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyMuPDFLoader
 
 
@@ -38,13 +39,10 @@ def vectorstore_maker(db_name,doc_folder):
 
     # Delete if already exists
     if os.path.exists(db_name):
-        Chroma(persist_directory=db_name, embedding_function=embeddings).delete_collection()
+        shutil.rmtree(db_name)
 
     # Create vectorstore
     vectorstore = Chroma.from_documents(documents=chunks, embedding=embeddings, persist_directory=db_name)
-
-    # Persist the vectorstore to disk
-    vectorstore.persist()
 
     return None
 
