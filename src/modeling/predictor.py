@@ -15,7 +15,7 @@ class PredictorModel(nn.Module):
     def forward(self, batch: Dict[str, Any]) -> torch.Tensor:
         """
         Prediction forward pass.
-
+    
         Args:
             batch: Dictionary from collate function containing features.
 
