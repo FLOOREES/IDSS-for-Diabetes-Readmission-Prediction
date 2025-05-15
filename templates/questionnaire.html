@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnosis Questionnaire</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        main {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+        .card {
+            width: 30rem;
+            padding: 2rem;
+        }
+
+        /* Overlay de carga */
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+
+        #loadingOverlay.show {
+            display: flex;
+        }
+
+        .spinner-border {
+            width: 5rem;
+            height: 5rem;
+        }
+
+        /* Contenedor de resultados (opcional) */
+        #resultsContainer {
+            position: absolute;
+            top: 0;
+            left: 100%;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            padding: 2rem;
+            box-sizing: border-box;
+            transition: transform 0.5s ease;
+        }
+
+        #resultsContainer.show {
+            transform: translateX(-100%);
+        }
+    </style>
+</head>
+<body>
+    <header class="bg-primary text-white py-4">
+        <div class="container text-center">
+            <h1 class="display-4">Diagnosis Questionnaire</h1>
+            <p class="lead">Enter the requested data to proceed with the diagnosis.</p>
+        </div>
+    </header>
+    <main>
+        <div class="card shadow-lg" id="questionnaireCard">
+            <div class="card-body">
+                <form id="questionnaireForm">
+                    <div class="mb-3">
+                        <label for="dlco" class="form-label">DLCO (%) at Diagnosis</label>
+                        <input type="number" class="form-control" id="dlco" name="dlco" placeholder="Ej: 80" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="age" class="form-label">Age at Diagnosis</label>
+                        <input type="number" class="form-control" id="age" name="age" placeholder="Ej: 45" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="fvc" class="form-label">FVC (%) at Diagnosis</label>
+                        <input type="number" class="form-control" id="fvc" name="fvc" placeholder="Ej: 70" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="final_diagnosis" class="form-label">Final Diagnosis</label>
+                        <input type="number" class="form-control" id="final_diagnosis" name="final_diagnosis" placeholder="Ej: 1" required>
+                    </div>
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-primary btn-lg">Send Questionnaire</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Overlay de carga -->
+        <div id="loadingOverlay">
+            <div class="spinner-border text-light" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <div class="text-light mt-3">Processing...</div>
+        </div>
+    </main>
+    <footer class="bg-light text-center py-3">
+        <p class="mb-0">© 2024 Fibrosis Diagnosis. All rights reserved.</p>
+    </footer>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const questionnaireForm = document.getElementById('questionnaireForm');
+        const loadingOverlay = document.getElementById('loadingOverlay');
+
+        questionnaireForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Evita recarga de página
+            const formData = new FormData(questionnaireForm);
+
+            // Mostrar overlay de carga
+            loadingOverlay.classList.add('show');
+            loadingOverlay.style.opacity = '1';
+
+            try {
+                const response = await fetch('/submit-questionnaire', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const resultsHTML = await response.text();
+
+                if (response.ok) {
+                    setTimeout(() => {
+                        // Ocultamos el overlay con transición
+                        loadingOverlay.style.opacity = '0';
+                        setTimeout(() => loadingOverlay.classList.remove('show'), 500);
+                        document.body.innerHTML = resultsHTML; // Reemplaza el contenido con los resultados
+                    }, 1000);
+                } else {
+                    alert('Error al procesar el formulario: ' + resultsHTML);
+                    loadingOverlay.style.opacity = '0';
+                    setTimeout(() => loadingOverlay.classList.remove('show'), 500);
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Error de conexión con el servidor.');
+                loadingOverlay.style.opacity = '0';
+                setTimeout(() => loadingOverlay.classList.remove('show'), 500);
+            }
+        });
+    </script>
+</body>
+</html>
