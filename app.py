@@ -17,7 +17,7 @@ def create_app():
     
     @app.route('/diagnosis-questionnaire')
     def questionnaire():
-        return render_template('questionnaire.html')  # Página del cuestionario
+        return render_template('dinamic_questionnaire.html')  # Página del cuestionario
     
     ##################### modo CSV #####################
 

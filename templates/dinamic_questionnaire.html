@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnosis Questionnaire</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { min-height: 100vh; display: flex; flex-direction: column; }
+        .step { display: none; }
+        .step.active { display: block; }
+        .progress { height: 20px; margin: 20px 0; }
+        #loadingOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.5);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+    <header class="bg-primary text-white py-4">
+        <div class="container text-center">
+            <h1 class="display-4">Patient Data Entry</h1>
+            <div class="progress">
+                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container py-4">
+        <form id="medicalForm">
+            <!-- Paso 1 - Información básica -->
+            <div class="step active" data-step="1">
+                <h3>Patient Information</h3>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Encounter ID</label>
+                        <input type="number" class="form-control" name="encounter_id" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Patient Number</label>
+                        <input type="number" class="form-control" name="patient_nbr" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Race</label>
+                        <select class="form-select" name="gender" required>
+                                <option value="Caucasian">Caucasian</option>
+                                <option value="AfricanAmerican">AfricanAmerican</option>
+                                <option value="Hispanic">Hispanic</option>
+                                <option value="Asian">Asian</option>
+                                <option value="Other">Other</option>
+                            </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Gender</label>
+                        <select class="form-select" name="gender" required>
+                            <option value="Female">Female</option>
+                            <option value="Male">Male</option>
+                            <option value="Unknown/Invalid">Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Age</label>
+                        <input type="number" class="form-control" name="age" required max="130">
+                            
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button type="button" class="btn btn-primary next-step">Next</button>
+                </div>
+            </div>
+            <!-- Paso 2 - Información médica -->
+             <div class="step active" data-step="2">
+                <h3>Patient Information</h3>
+                <div class="row g-3">
+
+                <div class="col-md-6">
+                    <label class="form-label">Time in Hospital (days)</label>
+                    <input type="number" class="form-control" name="time_in_hospital" required max="1000">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Number of Diagnoses</label>
+                    <input type="number" class="form-control" name="number_diagnoses" required max="50">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Number of Outpatient Visits</label>
+                    <input type="number" class="form-control" name="number_outpatient" required max="100">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Number of Inpatient Visits</label>
+                    <input type="number" class="form-control" name="number_inpatient" required max = "100">
+                </div>
+                </div>
+                <div class="mt-3">
+                    <button type="button" class="btn btn-secondary prev-step">Previous</button>
+
+                    <button type="button" class="btn btn-primary next-step">Next</button>
+                </div>
+            </div>
+            <!-- Paso 3 - Datos clínicos -->
+            <div class="step" data-step="3">
+                <h3>Patient Arrival Data</h3>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                    <label class="form-label">How did the patient reach the hospital? (ID)</label>
+                    <select class="form-select" name="admission_source_id" required>
+                        <option value="" disabled selected>Select admission source</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                        <option value="11">11</option>
+                        <option value="13">13</option>
+                        <option value="14">14</option>
+                        <option value="17">17</option>
+                        <option value="20">20</option>
+                        <option value="22">22</option>
+                        <option value="25">25</option>
+                    </select>
+                    </div>
+                    <div class="col-md-6">
+                    <label class="form-label">Under what circumstances was the patient admited? (ID)</label>
+                    <select class="form-select" name="admission_type_id" required>
+                        <option value="" disabled selected>Select admission type</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                    </select>
+                    </div>
+
+                
+                    <div class="col-md-6">
+                    <label class="form-label">Where was the patient discharged? (ID)</label>
+                    <select class="form-select" name="discharge_disposition_id" required>
+                        <option value="" disabled selected>Select discharge ID</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                        <option value="11">11</option>
+                        <option value="12">12</option>
+                        <option value="13">13</option>
+                        <option value="14">14</option>
+                        <option value="15">15</option>
+                        <option value="16">16</option>
+                        <option value="17">17</option>
+                        <option value="18">18</option>
+                        <option value="19">19</option>
+                        <option value="20">20</option>
+                        <option value="22">22</option>
+                        <option value="23">23</option>
+                        <option value="24">24</option>
+                        <option value="25">25</option>
+                        <option value="27">27</option>
+                        <option value="28">28</option>
+                    </select>
+                    </div>
+                </div>
+            
+                <div class="mt-3">
+                    <button type="button" class="btn btn-secondary prev-step">Previous</button>
+                    <button type="button" class="btn btn-primary next-step">Next</button>
+                </div>
+            </div>
+
+            <!-- Agrega más pasos aquí según sea necesario -->
+            <div class="step active" data-step="4">
+                <h3>Procedures Applied</h3>
+                <div class="row g-3">
+
+                <div class="col-md-6">
+                    <label class="form-label">Number of lab tests performed</label>
+                    <input type="number" class="form-control" name="num_lab_procedures" required max="100">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Number of procedures performed (not lab ones)</label>
+                    <input type="number" class="form-control" name="num_procedures" required max="50">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Number of emergency visits in the previous year</label>
+                    <input type="number" class="form-control" name="number_emergency" required max="100">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Number of medications administrated</label>
+                    <input type="number" class="form-control" name="number_inpatient" required max = "50">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Number of diagnoses recorded in the system</label>
+                    <input type="number" class="form-control" name="number_diagnoses" required max = "50">
+                </div>
+                </div>
+                <div class="mt-3">
+                    <button type="button" class="btn btn-secondary prev-step">Previous</button>
+
+                    <button type="button" class="btn btn-primary next-step">Next</button>
+                </div>
+            </div>
+            <!-- Paso 5 - Datos de medicamentos -->
+                        
+            <div class="step" data-step="5">
+                <h3>Medication Management</h3>
+                <button type="button" class="btn btn-outline-danger btn-sm" id="discontinueAll">
+                <i class="fas fa-times-circle"></i> Discontinue All
+                </button>
+                <div class="row g-3">
+                    <!-- Metformin -->
+                    <div class="col-12 medication-control">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Metformin</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-success btn-med" data-action="up">
+                                            <i class="fas fa-arrow-up"></i> Increase
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-med" data-action="down">
+                                            <i class="fas fa-arrow-down"></i> Decrease
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-med" data-action="equal">
+                                            <i class="fas fa-equals"></i> Maintain
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-med" data-action="none">
+                                            <i class="fas fa-times"></i> Not Prescribed
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="metformin" id="metformin" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Insulin -->
+                    <div class="col-12 medication-control">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Insulin</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-success btn-med" data-action="up">
+                                            <i class="fas fa-arrow-up"></i> Increase
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-med" data-action="down">
+                                            <i class="fas fa-arrow-down"></i> Decrease
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-med" data-action="equal">
+                                            <i class="fas fa-equals"></i> Maintain
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-med" data-action="none">
+                                            <i class="fas fa-times"></i> Not Prescribed
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="insulin" id="insulin" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-12 medication-control">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Repaglinide</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-success btn-med" data-action="up">
+                                            <i class="fas fa-arrow-up"></i> Increase
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-med" data-action="down">
+                                            <i class="fas fa-arrow-down"></i> Decrease
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-med" data-action="equal">
+                                            <i class="fas fa-equals"></i> Maintain
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-med" data-action="none">
+                                            <i class="fas fa-times"></i> Not Prescribed
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="repaglinide" id="repaglinide" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                       <div class="col-12 medication-control">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Nateglinide</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                       <button type="button" class="btn btn-success btn-med" data-action="up">
+                                            <i class="fas fa-arrow-up"></i> Increase
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-med" data-action="down">
+                                            <i class="fas fa-arrow-down"></i> Decrease
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-med" data-action="equal">
+                                            <i class="fas fa-equals"></i> Maintain
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-med" data-action="none">
+                                            <i class="fas fa-times"></i> Not Prescribed
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="nateglinide" id="nateglinide" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                       <div class="col-12 medication-control">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Chlorpropamide</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-success btn-med" data-action="up">
+                                            <i class="fas fa-arrow-up"></i> Increase
+                                       </button>
+                                       <button type="button" class="btn btn-danger btn-med" data-action="down">
+                                            <i class="fas fa-arrow-down"></i> Decrease
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-med" data-action="equal">
+                                            <i class="fas fa-equals"></i> Maintain
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-med" data-action="none">
+                                            <i class="fas fa-times"></i> Not Prescribed
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="chlorpropamide" id="chlorpropamide" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                       <div class="col-12 medication-control">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Glimepiride</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-success btn-med" data-action="up">
+                                            <i class="fas fa-arrow-up"></i> Increase
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-med" data-action="down">
+                                            <i class="fas fa-arrow-down"></i> Decrease
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-med" data-action="equal">
+                                            <i class="fas fa-equals"></i> Maintain
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-med" data-action="none">
+                                            <i class="fas fa-times"></i> Not Prescribed
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="glimepiride" id="glimepiride" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                       <div class="col-12 medication-control">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Acetohexamide</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-success btn-med" data-action="up">
+                                            <i class="fas fa-arrow-up"></i> Increase
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-med" data-action="down">
+                                            <i class="fas fa-arrow-down"></i> Decrease
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-med" data-action="equal">
+                                            <i class="fas fa-equals"></i> Maintain
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-med" data-action="none">
+                                            <i class="fas fa-times"></i> Not Prescribed
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="acetohexamide" id="acetohexamide" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                       <div class="col-12 medication-control">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Glipizide</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-success btn-med" data-action="up">
+                                            <i class="fas fa-arrow-up"></i> Increase
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-med" data-action="down">
+                                            <i class="fas fa-arrow-down"></i> Decrease
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-med" data-action="equal">
+                                            <i class="fas fa-equals"></i> Maintain
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-med" data-action="none">
+                                            <i class="fas fa-times"></i> Not Prescribed
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="glipizide" id="glipizide" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                       <div class="col-12 medication-control">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Glyburide</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-success btn-med" data-action="up">
+                                            <i class="fas fa-arrow-up"></i> Increase
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-med" data-action="down">
+                                            <i class="fas fa-arrow-down"></i> Decrease
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-med" data-action="equal">
+                                            <i class="fas fa-equals"></i> Maintain
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-med" data-action="none">
+                                            <i class="fas fa-times"></i> Not Prescribed
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="glyburide" id="glyburide" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                       <div class="col-12 medication-control">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Tolbutamide</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-success btn-med" data-action="up">
+                                            <i class="fas fa-arrow-up"></i> Increase
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-med" data-action="down">
+                                            <i class="fas fa-arrow-down"></i> Decrease
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-med" data-action="equal">
+                                            <i class="fas fa-equals"></i> Maintain
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-med" data-action="none">
+                                            <i class="fas fa-times"></i> Not Prescribed
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="tolbutamide" id="tolbutamide" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                       <div class="col-12 medication-control">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Pioglitazone</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-success btn-med" data-action="up">
+                                            <i class="fas fa-arrow-up"></i> Increase
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-med" data-action="down">
+                                            <i class="fas fa-arrow-down"></i> Decrease
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-med" data-action="equal">
+                                            <i class="fas fa-equals"></i> Maintain
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-med" data-action="none">
+                                            <i class="fas fa-times"></i> Not Prescribed
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="pioglitazone" id="pioglitazone" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                       <div class="col-12 medication-control">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Rosiglitazone</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-success btn-med" data-action="up">
+                                            <i class="fas fa-arrow-up"></i> Increase
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-med" data-action="down">
+                                            <i class="fas fa-arrow-down"></i> Decrease
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-med" data-action="equal">
+                                            <i class="fas fa-equals"></i> Maintain
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-med" data-action="none">
+                                            <i class="fas fa-times"></i> Not Prescribed
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="rosiglitazone" id="rosiglitazone" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                       <div class="col-12 medication-control">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Acarbose</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-success btn-med" data-action="up">
+                                            <i class="fas fa-arrow-up"></i> Increase
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-med" data-action="down">
+                                            <i class="fas fa-arrow-down"></i> Decrease
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-med" data-action="equal">
+                                            <i class="fas fa-equals"></i> Maintain
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-med" data-action="none">
+                                            <i class="fas fa-times"></i> Not Prescribed
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="acarbose" id="acarbose" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                       <div class="col-12 medication-control">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Miglitol</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-success btn-med" data-action="up">
+                                            <i class="fas fa-arrow-up"></i> Increase
+                                       </button>
+                                        <button type="button" class="btn btn-danger btn-med" data-action="down">
+                                            <i class="fas fa-arrow-down"></i> Decrease
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-med" data-action="equal">
+                                            <i class="fas fa-equals"></i> Maintain
+                                       </button>
+                                        <button type="button" class="btn btn-secondary btn-med" data-action="none">
+                                            <i class="fas fa-times"></i> Not Prescribed
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="miglitol" id="miglitol" value="">
+                               </div>
+                           </div>
+                       </div>
+                    </div>
+
+                        <div class="col-12 medication-control">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Troglitazone</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-success btn-med" data-action="up">
+                                            <i class="fas fa-arrow-up"></i> Increase
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-med" data-action="down">
+                                            <i class="fas fa-arrow-down"></i> Decrease
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-med" data-action="equal">
+                                            <i class="fas fa-equals"></i> Maintain
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-med" data-action="none">
+                                            <i class="fas fa-times"></i> Not Prescribed
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="troglitazone" id="troglitazone" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                       <div class="col-12 medication-control">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Tolazamide</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-success btn-med" data-action="up">
+                                            <i class="fas fa-arrow-up"></i> Increase
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-med" data-action="down">
+                                            <i class="fas fa-arrow-down"></i> Decrease
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-med" data-action="equal">
+                                            <i class="fas fa-equals"></i> Maintain
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-med" data-action="none">
+                                            <i class="fas fa-times"></i> Not Prescribed
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="tolazamide" id="tolazamide" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                       <div class="col-12 medication-control">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Examide</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-success btn-med" data-action="up">
+                                            <i class="fas fa-arrow-up"></i> Increase
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-med" data-action="down">
+                                           <i class="fas fa-arrow-down"></i> Decrease
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-med" data-action="equal">
+                                            <i class="fas fa-equals"></i> Maintain
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-med" data-action="none">
+                                            <i class="fas fa-times"></i> Not Prescribed
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="examide" id="examide" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                       <div class="col-12 medication-control">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Citoglipton</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-success btn-med" data-action="up">
+                                            <i class="fas fa-arrow-up"></i> Increase
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-med" data-action="down">
+                                            <i class="fas fa-arrow-down"></i> Decrease
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-med" data-action="equal">
+                                            <i class="fas fa-equals"></i> Maintain
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-med" data-action="none">
+                                            <i class="fas fa-times"></i> Not Prescribed
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="citoglipton" id="citoglipton" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                       <div class="col-12 medication-control">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Glyburide-metformin</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-success btn-med" data-action="up">
+                                            <i class="fas fa-arrow-up"></i> Increase
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-med" data-action="down">
+                                            <i class="fas fa-arrow-down"></i> Decrease
+                                        </button>
+                                       <button type="button" class="btn btn-primary btn-med" data-action="equal">
+                                           <i class="fas fa-equals"></i> Maintain
+                                       </button>
+                                        <button type="button" class="btn btn-secondary btn-med" data-action="none">
+                                            <i class="fas fa-times"></i> Not Prescribed
+                                        </button>
+                                    </div>
+                                   <input type="hidden" name="glyburide-metformin" id="glyburide-metformin" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                       <div class="col-12 medication-control">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Glipizide-metformin</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-success btn-med" data-action="up">
+                                            <i class="fas fa-arrow-up"></i> Increase
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-med" data-action="down">
+                                            <i class="fas fa-arrow-down"></i> Decrease
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-med" data-action="equal">
+                                            <i class="fas fa-equals"></i> Maintain
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-med" data-action="none">
+                                            <i class="fas fa-times"></i> Not Prescribed
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="glipizide-metformin" id="glipizide-metformin" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                       <div class="col-12 medication-control">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Glimepiride-pioglitazone</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-success btn-med" data-action="up">
+                                            <i class="fas fa-arrow-up"></i> Increase
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-med" data-action="down">
+                                            <i class="fas fa-arrow-down"></i> Decrease
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-med" data-action="equal">
+                                            <i class="fas fa-equals"></i> Maintain
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-med" data-action="none">
+                                            <i class="fas fa-times"></i> Not Prescribed
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="glimepiride-pioglitazone" id="glimepiride-pioglitazone" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                       <div class="col-12 medication-control">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Metformin-rosiglitazone</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-success btn-med" data-action="up">
+                                            <i class="fas fa-arrow-up"></i> Increase
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-med" data-action="down">
+                                            <i class="fas fa-arrow-down"></i> Decrease
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-med" data-action="equal">
+                                            <i class="fas fa-equals"></i> Maintain
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-med" data-action="none">
+                                            <i class="fas fa-times"></i> Not Prescribed
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="metformin-rosiglitazone" id="metformin-rosiglitazone" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                       <div class="col-12 medication-control">
+                        <div class="card shadow-sm">
+                            <div class="card-body">
+                                <h5 class="card-title">Metformin-pioglitazone</h5>
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div class="btn-group">
+                                        <button type="button" class="btn btn-success btn-med" data-action="up">
+                                            <i class="fas fa-arrow-up"></i> Increase
+                                        </button>
+                                        <button type="button" class="btn btn-danger btn-med" data-action="down">
+                                            <i class="fas fa-arrow-down"></i> Decrease
+                                        </button>
+                                        <button type="button" class="btn btn-primary btn-med" data-action="equal">
+                                            <i class="fas fa-equals"></i> Maintain
+                                        </button>
+                                        <button type="button" class="btn btn-secondary btn-med" data-action="none">
+                                            <i class="fas fa-times"></i> Not Prescribed
+                                        </button>
+                                    </div>
+                                    <input type="hidden" name="metformin-pioglitazone" id="metformin-pioglitazone" value="">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add other medications following the same pattern -->
+               </div>
+                
+                <div class="mt-3">
+                    <button type="button" class="btn btn-secondary prev-step">Previous</button>
+                    <button type="button" class="btn btn-primary next-step">Next</button>
+                </div>
+            </div>
+            <!-- Último paso -->
+            <div class="step" data-step="6">
+                <h3>Final Details</h3>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Diabetes Medication</label>
+                        <select class="form-select" name="diabetesMed" required>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Readmitted</label>
+                        <input type="text" class="form-control" name="readmitted" required>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <button type="button" class="btn btn-secondary prev-step">Previous</button>
+                    <button type="submit" class="btn btn-success">Submit</button>
+                </div>
+            </div>
+        </form>
+
+        <div id="loadingOverlay">
+            <div class="spinner-border text-light" role="status"></div>
+        </div>
+    </main>
+    <style>
+    .btn-med {
+        transition: all 0.3s ease;
+        min-width: 150px;
+    }
+
+    .btn-med.selected {
+        transform: scale(1.15);
+        z-index: 2;
+        box-shadow: 0 0 8px rgba(0,0,0,0.2);
+    }
+
+    .btn-med[data-action="up"] {
+        background: #28a745;
+        border-color: #28a745;
+    }
+
+    .btn-med[data-action="down"] {
+        background: #dc3545;
+        border-color: #dc3545;
+    }
+
+    .btn-med[data-action="equal"] {
+        background: #007bff;
+        border-color: #007bff;
+    }
+
+    .btn-med[data-action="none"] {
+        background: #6c757d;
+        border-color: #6c757d;
+    }
+
+    .medication-control {
+        margin-bottom: 1.5rem;
+    }
+    </style>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const form = document.getElementById('medicalForm');
+            const steps = document.querySelectorAll('.step');
+            const progressBar = document.querySelector('.progress-bar');
+            let currentStep = 0;
+
+            // Inicializar primer paso
+            showStep(currentStep);
+
+            // Botones de navegación
+            document.querySelectorAll('.next-step').forEach(button => {
+                button.addEventListener('click', () => validateAndNext());
+            });
+
+            document.querySelectorAll('.prev-step').forEach(button => {
+                button.addEventListener('click', () => prevStep());
+            });
+
+            function showStep(stepIndex) {
+                steps.forEach((step, index) => {
+                    step.classList.toggle('active', index === stepIndex);
+                });
+                updateProgress(stepIndex);
+            }
+
+            function validateAndNext() {
+                const currentStepElements = steps[currentStep].querySelectorAll('[required]');
+                let isValid = true;
+
+                currentStepElements.forEach(element => {
+                    if (!element.reportValidity()) isValid = false;
+                });
+
+                if (isValid && currentStep < steps.length - 1) {
+                    currentStep++;
+                    showStep(currentStep);
+                }
+            }
+
+            function prevStep() {
+                if (currentStep > 0) {
+                    currentStep--;
+                    showStep(currentStep);
+                }
+            }
+
+            function updateProgress(stepIndex) {
+                const progress = ((stepIndex + 1) / steps.length) * 100;
+                progressBar.style.width = `${progress}%`;
+            }
+
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                document.getElementById('loadingOverlay').style.display = 'flex';
+
+                try {
+                    const response = await fetch('/submit-questionnaire', {
+                        method: 'POST',
+                        body: new FormData(form)
+                    });
+
+                    if (response.ok) {
+                        window.location.href = '/results';
+                    } else {
+                        alert('Error submitting form');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                } finally {
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                }
+            });
+        });
+        document.querySelectorAll('.btn-med').forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove selection from all buttons in group
+            this.parentNode.querySelectorAll('.btn-med').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            
+            // Add selection to clicked button
+            this.classList.add('selected');
+            
+            // Update hidden input value
+            const input = this.closest('.card-body').querySelector('input[type="hidden"]');
+            switch(this.dataset.action) {
+                case 'up': input.value = "Up"; break;
+                case 'down': input.value = "Down"; break;
+                case 'equal': input.value ="Steady"; break;
+                case 'none': input.value = "No"; break;
+            }
+        });
+    });
+    </script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</body>
+</html>
