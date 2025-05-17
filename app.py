@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, session, flash, redirect, url_for, jsonify
 import pandas as pd
 import os
+import json
 
 file_dir = os.path.dirname(__file__)
 os.chdir(file_dir)
@@ -26,6 +27,46 @@ def create_app():
     def questionnaire():
         return render_template('dinamic_questionnaire.html')  # Página del cuestionario
     
+    @app.route('/search/icd9')
+    def search_icd9():
+        with open('data/icd9Hierarchy.json') as f:
+            icd9_data = json.load(f)
+        query = request.args.get('q', '')
+        results = []
+        for item in icd9_data:
+            if "subchapter" in item.keys():
+                description = item["major"] + " " + item["subchapter"] + " " + item["chapter"]
+            else:
+                description = item["major"] + " " + item["chapter"]
+
+            if item['icd9'].startswith(query):
+                results.append({"numero": item["icd9"], "desc": item["descLong"]})
+
+            elif item["threedigit"].startswith(query):
+                if "subchapter" in item.keys():
+                    results.append({"numero": item["threedigit"], "desc": item["major"] + " " + item["subchapter"] + " " + item["chapter"]})
+                else:
+                    results.append({"numero": item["threedigit"], "desc": item["major"] + " " + item["chapter"]})
+
+            elif query.lower() in item["descLong"].lower():
+                results.append({"numero": item["icd9"], "desc": item["descLong"]})
+
+            
+            elif query.lower() in description.lower():
+                results.append({"numero": item["threedigit"], "desc": description})
+        return jsonify(results)
+    
+    # @app.route('/search/icd9/<icd9>')
+    # def search_icd9_by_code(icd9):
+    #     with open('data/icd9Hierarchy.json') as f:
+    #         icd9_data = json.load(f)
+    #     for item in icd9_data:
+    #         if item['icd9'] == icd9:
+    #             return jsonify({"numero":item["icd9"], "desc": item["descLong"]})
+    #         elif item["threedigit"] == icd9:
+    #             return jsonify({"numero":item["threedigit"], "desc": item["major"]+" "+item["subchapter"]+" "+item["chapter"]})
+    #     return jsonify({"error": "ICD-9 code not found"}), 404
+
     @app.route('/search-patient')
     def search_patient():
         query = request.args.get('q', '')

@@ -829,8 +829,20 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label">Diagnosis 1</label>
-                        <input type="text" class="form-control" name="diag_1" required>
-
+                        <div class="input-group">
+                            <input type="text"
+                                   class="form-control"
+                                   name="diag_1"
+                                   id="diag1Input"
+                                   required
+                                   autocomplete="off">
+                            <button type="button"
+                                    class="btn btn-outline-primary"
+                                    id="searchDiag1Btn">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <div id="diag1Results" class="mt-2 d-none"></div>
                     </div>
                     <div class="col-md-6">
                         <label class="form-label">Diagnosis 2</label>
@@ -1207,10 +1219,66 @@ async function loadPatientData(patientId) {
     } catch (error) {
         console.error('Error:', error);
         alert('Error loading patient data');
+        }
     }
-}
 
+    // Autocomplete for diag_1
+    function updateDiag1Results(results) {
+        const resultsContainer = document.getElementById('diag1Results');
+        resultsContainer.innerHTML = '';
 
+        if (results.length === 0) {
+        resultsContainer.innerHTML = '<div class="patient-result-item text-muted">No se encontraron resultados</div>';
+        resultsContainer.classList.remove('d-none');
+        return;
+        }
+
+        results.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'patient-result-item';
+        div.innerHTML = `
+            <div class="fw-bold">${item.numero}</div>
+            <small>${item.desc || ''}</small>
+        `;
+        div.addEventListener('click', () => {
+            document.getElementById('diag1Input').value = item.numero;
+            resultsContainer.classList.add('d-none');
+        });
+        resultsContainer.appendChild(div);
+        });
+
+        resultsContainer.classList.remove('d-none');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const diag1Input = document.getElementById('diag1Input');
+        const diag1Results = document.getElementById('diag1Results');
+        let diag1Debounce;
+
+        diag1Input.addEventListener('input', (e) => {
+        clearTimeout(diag1Debounce);
+        diag1Debounce = setTimeout(async () => {
+            const query = e.target.value;
+            if (query.length < 1) {
+            diag1Results.classList.add('d-none');
+            return;
+            }
+            try {
+            const response = await fetch(`/search/icd9?q=${encodeURIComponent(query)}`);
+            const results = await response.json();
+            updateDiag1Results(results);
+            } catch (error) {
+            console.error('Error:', error);
+            }
+        }, 300);
+        });
+
+        document.addEventListener('click', (e) => {
+        if (!diag1Input.contains(e.target) && !diag1Results.contains(e.target)) {
+            diag1Results.classList.add('d-none');
+        }
+        });
+    });
     </script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </body>
