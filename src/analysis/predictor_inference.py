@@ -10,12 +10,12 @@ import os
 from tqdm import tqdm
 
 # Import necessary modules (adjust paths as needed)
-from modeling.predictor import PredictorModel
+from src.modeling.predictor import PredictorModel
 # Need model building logic if loading state_dict
-from modeling import PredictionHead
-from data_preparation import SequenceDataPreparer, PatientSequenceDataset, pad_collate_fn
-from utils.helpers import load_artifact
-from modeling.model_builder import build_autoencoder_from_config # Assuming this is a helper function to reconstruct the model from config
+from src.modeling import PredictionHead
+from src.data_preparation import SequenceDataPreparer, PatientSequenceDataset, pad_collate_fn
+from src.utils.helpers import load_artifact
+from src.modeling.model_builder import build_autoencoder_from_config # Assuming this is a helper function to reconstruct the model from config
 
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 

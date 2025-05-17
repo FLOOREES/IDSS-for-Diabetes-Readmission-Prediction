@@ -11,7 +11,7 @@ import os
 from tqdm import tqdm # Add tqdm for progress bars
 
 # Assuming utils.helpers exists for save/load_artifact
-from utils.helpers import save_artifact, load_artifact
+from src.utils.helpers import save_artifact, load_artifact
 
 logger = logging.getLogger(__name__)
 

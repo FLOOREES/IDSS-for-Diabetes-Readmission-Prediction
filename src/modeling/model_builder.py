@@ -1,7 +1,11 @@
 import logging
-from modeling import EmbeddingManager, EncoderRNN, DecoderRNN, Seq2SeqAE
+from .embeddings import EmbeddingManager 
+from .encoder import EncoderRNN
+from .decoder import DecoderRNN
+from .autoencoder import Seq2SeqAE 
 from typing import Dict
-from config import (HIDDEN_DIM, NUM_RNN_LAYERS, DROPOUT, USE_GRU, USE_ATTENTION, ATTENTION_DIM, 
+
+from src.config import (HIDDEN_DIM, NUM_RNN_LAYERS, DROPOUT, USE_GRU, USE_ATTENTION, ATTENTION_DIM, 
     OTHER_EMBEDDING_DIM, LEARNED_EMB_COLS, PRECOMPUTED_EMB_COLS, DIAG_EMBEDDINGS_PATH, FINETUNE_DIAG_EMBEDDINGS,)
 
 

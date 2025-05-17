@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 from typing import Dict, Any
 from .base_trainer import BaseTrainer
-from modeling.autoencoder import Seq2SeqAE # Adjust import based on actual structure
+from src.modeling.autoencoder import Seq2SeqAE # Adjust import based on actual structure
 
 class AETrainer(BaseTrainer):
     """ Trainer specifically for the Sequence Autoencoder. """

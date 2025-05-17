@@ -4,7 +4,7 @@ import torch.nn as nn
 from typing import Dict, Any, Optional
 import logging
 # Adjust import based on actual structure - assuming modeling is sibling to training
-from modeling.predictor import PredictorModel
+from src.modeling.predictor import PredictorModel
 from .base_trainer import BaseTrainer
 
 logger = logging.getLogger(__name__)
