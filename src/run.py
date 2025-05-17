@@ -66,12 +66,6 @@ def main() -> None:
         config.TRAIN_PREDICTOR = args.train_predictor
     elif not hasattr(config, 'TRAIN_PREDICTOR'): # Ensure default
         config.TRAIN_PREDICTOR = False
-        
-    # Ensure FORCE_PREPROCESS is not lingering in config from previous versions,
-    # or set it to False explicitly if other parts of the code might still reference it.
-    # For this iteration, we assume it's fully removed from pipeline logic too.
-    if hasattr(config, 'FORCE_PREPROCESS'):
-        delattr(config, 'FORCE_PREPROCESS') # Or set to False if deletion is too aggressive
 
     logger.info("Initializing and executing the pipeline...")
     pipeline_instance = Pipeline(cfg=config)
