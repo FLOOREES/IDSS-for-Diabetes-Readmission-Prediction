@@ -30,7 +30,6 @@ def create_app():
     def search_patient():
         query = request.args.get('q', '')
         df = pd.read_csv(csv_path)
-        print(df.columns)
         # Convertir NaN a None y manejar tipos de datos
         results = df[df['patient_nbr'].astype(str).str.contains(query)].head(5)
         clean_results = results.where(pd.notnull(results), None).to_dict(orient='records')

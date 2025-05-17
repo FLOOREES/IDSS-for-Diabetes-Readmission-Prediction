@@ -852,6 +852,7 @@
             <div class="spinner-border text-light" role="status"></div>
         </div>
     </main>
+
     <style>
     .btn-med {
         transition: all 0.3s ease;
@@ -863,7 +864,13 @@
     box-shadow: 0 0 8px rgba(0,0,0,0.3);
     z-index: 2;
     border: 2px solid #000 !important;
-}
+    animation: buttonPop 0.3s ease;
+    }
+    @keyframes buttonPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1.05); }
+    }
 
     .btn-med[data-action="up"] {
         background: #28a745;
@@ -925,6 +932,10 @@
         border-radius: 4px;
         max-height: 200px;
         overflow-y: auto;
+    }
+    .step.active {
+    display: block !important;
+    opacity: 1 !important;
     }
     </style>
 
@@ -1151,31 +1162,44 @@ async function loadPatientData(patientId) {
         const response = await fetch(`/get-patient-data/${patientId}`);
         const patientData = await response.json();
 
-        // Load regular fields
-        Object.entries(patientData).forEach(([field, value]) => {
-            const input = document.querySelector(`[name="${field}"]`);
-            if (!input) return;
+        // Mapa entre valor de datos y acción de botón
+        const medicationMap = {
+            'Up': 'up',
+            'Down': 'down',
+            'Steady': 'equal',
+            'No': 'none'
+        };
 
-            // Handle medication fields differently
-            if (field.startsWith('med_')) {
-                // Find the medication control container
-                const medicationControl = document.querySelector(`input[name="${field}"]`).closest('.medication-control');
-                
-                // Remove previous selections
-                medicationControl.querySelectorAll('.btn-med').forEach(btn => {
+        // Para cada control de medicamento
+        document.querySelectorAll('.medication-control').forEach(control => {
+            const hiddenInput = control.querySelector('input[type="hidden"]');
+            const fieldName = hiddenInput.name;                // Ej: "metformin"
+            const dataValue = patientData[fieldName];          // Ej: "Up", "Down", ...
+
+            // Si hay dato para este medicamento
+            if (dataValue && medicationMap[dataValue]) {
+                // Acción que toca
+                const action = medicationMap[dataValue];
+
+                // Limpiar selección previa
+                control.querySelectorAll('.btn-med').forEach(btn => {
                     btn.classList.remove('selected');
                 });
 
-                // Find and select the correct button
-                const targetButton = medicationControl.querySelector(`[data-action="${value}"]`);
-                if (targetButton) {
-                    targetButton.classList.add('selected');
-                    // Update the hidden input value
-                    const hiddenInput = medicationControl.querySelector('input[type="hidden"]');
-                    hiddenInput.value = value;
+                // Seleccionar botón correspondiente
+                const btn = control.querySelector(`.btn-med[data-action="${action}"]`);
+                if (btn) {
+                    btn.classList.add('selected');
+                    hiddenInput.value = dataValue;
                 }
-            } else {
-                // Handle normal inputs
+            }
+        });
+
+        // Resto de campos (inputs, selects normales)
+        Object.entries(patientData).forEach(([field, value]) => {
+            // Ya tratamos los medicamentos, omitimos si el control es hidden
+            const input = document.querySelector(`[name="${field}"]:not(input[type="hidden"])`);
+            if (input) {
                 input.value = value;
             }
         });
@@ -1185,6 +1209,8 @@ async function loadPatientData(patientId) {
         alert('Error loading patient data');
     }
 }
+
+
     </script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </body>
