@@ -68,18 +68,94 @@ def create_app():
     @app.route('/submit-questionnaire', methods=['POST'])
     def submit_questionnaire():
         # Obtener los datos enviados por el formulario
-        dlco = request.form.get('dlco', type=float)  # DLCO (%) at Diagnosis
+        encounter_id = request.form.get('encounter_id', type=int)  # Encounter ID
+        patient_id = request.form.get('patient_nbr', type=int)
         age = request.form.get('age', type=int)  # Age at Diagnosis
-        fvc = request.form.get('fvc', type=float)  # FVC (%) at Diagnosis
-        final_diagnosis = request.form.get('final_diagnosis', type=int)  # Final Diagnosis
+        race = request.form.get('race', type=str)
+        gender = request.form.get('gender', type=str)
+        admission_source_id = request.form.get('admission_source_id', type=int)
+        admission_type_id = request.form.get('admission_type_id', type=int)
+        discharge_disposition_id = request.form.get('discharge_disposition_id', type=int)
+        time_in_hospital = request.form.get('time_in_hospital', type=int)
+        num_lab_procedures = request.form.get('num_lab_procedures', type=int)
+        num_procedures = request.form.get('num_procedures', type=int)
+        num_medications = request.form.get('num_medications', type=int)
+        number_outpatient = request.form.get('number_outpatient', type=int)
+        number_emergency = request.form.get('number_emergency', type=int)
+        number_inpatient = request.form.get('number_inpatient', type=int)
+        number_diagnoses = request.form.get('number_diagnoses', type=int)
+        metformin = request.form.get('metformin', type=str)
+        repaglinide = request.form.get('repaglinide', type=str)
+        nateglinide = request.form.get('nateglinide', type=str)
+        chlorpropamide = request.form.get('chlorpropamide', type=str)
+        glimepiride = request.form.get('glimepiride', type=str)
+        acetohexamide = request.form.get('acetohexamide', type=str)
+        miglitol = request.form.get('miglitol', type=str)
+        troglitazone = request.form.get('troglitazone', type=str)
+        tolazamide = request.form.get('tolazamide', type=str)
+        glyburide_metformin = request.form.get('glyburide-metformin', type=str)
+        glipizide_metformin = request.form.get('glipizide-metformin', type=str)
+        glimepiride_pioglitazone = request.form.get('glimepiride-pioglitazone', type=str)
+        metformin_rosiglitazone = request.form.get('metformin-rosiglitazone', type=str)
+        metformin_pioglitazone = request.form.get('metformin-pioglitazone', type=str)
+        acarbose = request.form.get('acarbose', type=str)
+        insulin = request.form.get('insulin', type=str)
+        glyburide = request.form.get('glyburide', type=str)
+        pioglitazone = request.form.get('pioglitazone', type=str)
+        examide = request.form.get('examide', type=str)
+        citoglipton = request.form.get('citoglipton', type=str)
+        glipizide = request.form.get('glipizide', type=str)
+        tolbutamide = request.form.get('tolbutamide', type=str)
+        rosiglitazone = request.form.get('rosiglitazone', type=str)
+        diag_1 = request.form.get('diag_1', type=str)
+        diag_2 = request.form.get('diag_2', type=str)
+        diag_3 = request.form.get('diag_3', type=str)
 
 
         # Guardar los datos en variables o procesarlos
         user_data = {
-            'dlco': dlco,
+            'encounter_id': encounter_id,
+            'patient_nbr': patient_id,
             'age': age,
-            'fvc': fvc,
-            'final_diagnosis': final_diagnosis,
+            'race': race,
+            'gender': gender,
+            'admission_source_id': admission_source_id,
+            'admission_type_id': admission_type_id,
+            'discharge_disposition_id': discharge_disposition_id,
+            'time_in_hospital': time_in_hospital,
+            'num_lab_procedures': num_lab_procedures,
+            'num_procedures': num_procedures,
+            'num_medications': num_medications,
+            'number_outpatient': number_outpatient,
+            'number_emergency': number_emergency,
+            'number_inpatient': number_inpatient,
+            'number_diagnoses': number_diagnoses,
+            'metformin': metformin,
+            'repaglinide': repaglinide,
+            'nateglinide': nateglinide,
+            'chlorpropamide': chlorpropamide,
+            'glimepiride': glimepiride,
+            'acetohexamide': acetohexamide,
+            'miglitol': miglitol,
+            'troglitazone': troglitazone,
+            'tolazamide': tolazamide,
+            'glyburide-metformin': glyburide_metformin,
+            'glipizide-metformin': glipizide_metformin,
+            'glimepiride-pioglitazone': glimepiride_pioglitazone,
+            'metformin-rosiglitazone': metformin_rosiglitazone,
+            'metformin-pioglitazone': metformin_pioglitazone,
+            'acarbose': acarbose,
+            'insulin': insulin,
+            'glyburide': glyburide,
+            'pioglitazone': pioglitazone,
+            'examide': examide,
+            'citoglipton': citoglipton,
+            'glipizide': glipizide,
+            'tolbutamide': tolbutamide,
+            'rosiglitazone': rosiglitazone,
+            'diag_1': diag_1,
+            'diag_2': diag_2,
+            'diag_3': diag_3
         }
         User = pd.DataFrame(user_data, index=[0])
         User.to_csv('uploads/latent_data.csv', index=False)

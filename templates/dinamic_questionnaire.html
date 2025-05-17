@@ -50,7 +50,7 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Race</label>
-                        <select class="form-select" name="gender" required>
+                        <select class="form-select" name="race" required>
                                 <option value="Caucasian">Caucasian</option>
                                 <option value="AfricanAmerican">AfricanAmerican</option>
                                 <option value="Hispanic">Hispanic</option>
@@ -206,7 +206,7 @@
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Number of medications administrated</label>
-                    <input type="number" class="form-control" name="number_inpatient" required max = "50">
+                    <input type="number" class="form-control" name="num_medications" required max = "50">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Number of diagnoses recorded in the system</label>
@@ -224,7 +224,7 @@
             <div class="step" data-step="5">
                 <h3>Medication Management</h3>
                 <button type="button" class="btn btn-outline-danger btn-sm" id="discontinueAll">
-                <i class="fas fa-times-circle"></i> Discontinue All
+                <i class="fas fa-times-circle"></i> Mark All as Not Prescribed
                 </button>
                 <div class="row g-3">
                     <!-- Metformin -->
@@ -815,15 +815,17 @@
                 <h3>Final Details</h3>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label">Diabetes Medication</label>
-                        <select class="form-select" name="diabetesMed" required>
-                            <option value="Yes">Yes</option>
-                            <option value="No">No</option>
-                        </select>
+                        <label class="form-label">Diagnosis 1</label>
+                        <input type="text" class="form-control" name="diag_1" required>
+
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Readmitted</label>
-                        <input type="text" class="form-control" name="readmitted" required>
+                        <label class="form-label">Diagnosis 2</label>
+                        <input type="text" class="form-control" name="diag_2" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Diagnosis 3</label>
+                        <input type="text" class="form-control" name="diag_3" required>
                     </div>
                 </div>
                 <div class="mt-3">
@@ -845,7 +847,7 @@
 
     .btn-med.selected {
         transform: scale(1.15);
-        z-index: 2;
+        z-index: 10 !important;
         box-shadow: 0 0 8px rgba(0,0,0,0.2);
     }
 
@@ -871,6 +873,26 @@
 
     .medication-control {
         margin-bottom: 1.5rem;
+    }
+    #discontinueAll {
+    transition: all 0.2s ease;
+    padding: 0.5rem 1rem;
+    }
+
+    #discontinueAll:hover {
+        transform: scale(1.05);
+        box-shadow: 0 2px 8px rgba(220,53,69,0.25);
+    }
+    .medication-control.is-invalid {
+    border: 2px solid #dc3545;
+    border-radius: 8px;
+    animation: shake 0.5s;
+}
+
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
     }
     </style>
 
@@ -949,26 +971,87 @@
                 }
             });
         });
-        document.querySelectorAll('.btn-med').forEach(button => {
-        button.addEventListener('click', function() {
-            // Remove selection from all buttons in group
-            this.parentNode.querySelectorAll('.btn-med').forEach(btn => {
-                btn.classList.remove('selected');
+        // Corrige el selector del input hidden y asegura la vinculación correcta
+document.querySelectorAll('.btn-med').forEach(button => {
+    button.addEventListener('click', function() {
+        const cardBody = this.closest('.card-body');
+        const input = cardBody.querySelector('input[type="hidden"]'); // Selector corregido
+        
+        // Remover selección previa
+        this.parentNode.querySelectorAll('.btn-med').forEach(btn => btn.classList.remove('selected'));
+        
+        // Añadir selección actual
+        this.classList.add('selected');
+        
+        // Actualizar valor (asegurar que los valores coincidan con lo esperado por el backend)
+        switch(this.dataset.action) {
+            case 'up': 
+                input.value = "Up"; 
+                break;
+            case 'down': 
+                input.value = "Down"; 
+                break;
+            case 'equal': 
+                input.value = "Steady"; 
+                break;
+            case 'none': 
+                input.value = "No"; 
+                break;
+        }
+        console.log(`Campo ${input.name} actualizado a: ${input.value}`); // Para depuración
+    });
+});
+    document.querySelector('form').addEventListener('submit', function(e) {
+    // Validate medications
+    const invalidMedications = [];
+    
+    document.querySelectorAll('.medication-control').forEach(control => {
+        const input = control.querySelector('input[type="hidden"]');
+        const medicationName = control.querySelector('.card-title').textContent;
+        
+        // Check if value is empty or invalid
+         if (!input.value || !["Up", "Down", "Steady", "No"].includes(input.value)) {
+            invalidMedications.push(medicationName);
+            control.classList.add('is-invalid');
+        } else {
+            control.classList.remove('is-invalid');
+        }
+    });
+
+        if (invalidMedications.length > 0) {
+            e.preventDefault();
+            alert(`Please select an option for:\n${invalidMedications.join('\n')}`);
+            // Scroll to first invalid medication
+            document.querySelector('.is-invalid')?.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center'
             });
-            
-            // Add selection to clicked button
-            this.classList.add('selected');
-            
-            // Update hidden input value
-            const input = this.closest('.card-body').querySelector('input[type="hidden"]');
-            switch(this.dataset.action) {
-                case 'up': input.value = "Up"; break;
-                case 'down': input.value = "Down"; break;
-                case 'equal': input.value ="Steady"; break;
-                case 'none': input.value = "No"; break;
-            }
+        }
+    });
+
+    // Add visual validation to buttons
+    document.querySelectorAll('.btn-med').forEach(button => {
+        button.addEventListener('click', function() {
+            this.closest('.medication-control').classList.remove('is-invalid');
         });
     });
+
+
+    document.getElementById('discontinueAll').addEventListener('click', () => {
+    document.querySelectorAll('.medication-control').forEach(control => {
+        const noneButton = control.querySelector('[data-action="none"]');
+        const input = control.querySelector('input[type="hidden"]');
+        
+        control.querySelectorAll('.btn-med').forEach(btn => {
+            btn.classList.remove('selected');
+        });
+        
+        noneButton.classList.add('selected');
+        input.value = "No"; // Changed from -2 to match validation
+        control.classList.remove('is-invalid');
+    });
+});
+
     </script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </body>
