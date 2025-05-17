@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, session, flash, redirect, url_for
+from flask import Flask, render_template, request, session, flash, redirect, url_for, jsonify
 import pandas as pd
 import os
 
@@ -10,6 +10,13 @@ def create_app():
     app.config['UPLOAD_FOLDER'] = os.path.join(file_dir, 'uploads')
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
+    csv_path = 'data/diabetic_data.csv'  # Ajusta la ruta a tu CSV
+
+    # Cargar datos al iniciar la app
+    try:
+        df = pd.read_csv(csv_path)
+    except FileNotFoundError:
+        df = pd.DataFrame()
 
     @app.route('/')
     def titulo():
@@ -19,6 +26,29 @@ def create_app():
     def questionnaire():
         return render_template('dinamic_questionnaire.html')  # Página del cuestionario
     
+    @app.route('/search-patient')
+    def search_patient():
+        query = request.args.get('q', '')
+        df = pd.read_csv(csv_path)
+        print(df.columns)
+        # Convertir NaN a None y manejar tipos de datos
+        results = df[df['patient_nbr'].astype(str).str.contains(query)].head(5)
+        clean_results = results.where(pd.notnull(results), None).to_dict(orient='records')
+        
+        return jsonify(clean_results)
+
+    @app.route('/get-patient-data/<patient_id>')
+    def get_patient_data(patient_id):
+        df = pd.read_csv(csv_path)
+        patient_data = df[df['patient_nbr'].astype(str) == str(patient_id)]
+        
+        if patient_data.empty:
+            return jsonify({'error': 'Patient not found'}), 404
+        
+        # Limpiar datos antes de convertir a JSON
+        clean_data = patient_data.iloc[0].replace({pd.NA: None, pd.NaT: None}).to_dict()
+        
+        return jsonify(clean_data)
     ##################### modo CSV #####################
 
     @app.route('/upload-csv', methods=['GET'])

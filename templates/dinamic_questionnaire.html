@@ -45,9 +45,22 @@
                         <input type="number" class="form-control" name="encounter_id" required>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Patient Number</label>
-                        <input type="number" class="form-control" name="patient_nbr" required>
+                    <label class="form-label">Patient Number</label>
+                    <div class="input-group">
+                        <input type="number" 
+                            class="form-control" 
+                            name="patient_nbr" 
+                            id="patientNumberInput"
+                            required
+                            autocomplete="off">
+                        <button type="button" 
+                                class="btn btn-outline-primary" 
+                                id="searchPatientBtn">
+                            <i class="fas fa-search"></i>
+                        </button>
                     </div>
+                    <div id="patientResults" class="mt-2 d-none"></div>
+                </div>
                     <div class="col-md-4">
                         <label class="form-label">Race</label>
                         <select class="form-select" name="race" required>
@@ -228,7 +241,7 @@
                 </button>
                 <div class="row g-3">
                     <!-- Metformin -->
-                    <div class="col-12 medication-control">
+                    <div class="col-12 medication-control" data-medication="metformin">
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title">Metformin</h5>
@@ -254,7 +267,7 @@
                     </div>
 
                     <!-- Insulin -->
-                    <div class="col-12 medication-control">
+                    <div class="col-12 medication-control" data-medication="insulin">
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title">Insulin</h5>
@@ -278,7 +291,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-12 medication-control">
+                    <div class="col-12 medication-control" data-medication="repaglinide">
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title">Repaglinide</h5>
@@ -302,7 +315,7 @@
                             </div>
                         </div>
                     </div>
-                       <div class="col-12 medication-control">
+                       <div class="col-12 medication-control" data-medication="nateglinide">
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title">Nateglinide</h5>
@@ -327,7 +340,7 @@
                         </div>
                     </div>
 
-                       <div class="col-12 medication-control">
+                       <div class="col-12 medication-control" data-medication="chlorpropamide">
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title">Chlorpropamide</h5>
@@ -352,7 +365,7 @@
                         </div>
                     </div>
 
-                       <div class="col-12 medication-control">
+                       <div class="col-12 medication-control" data-medication="glimepiride">
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title">Glimepiride</h5>
@@ -377,7 +390,7 @@
                         </div>
                     </div>
 
-                       <div class="col-12 medication-control">
+                       <div class="col-12 medication-control" data-medication="acetohexamide">
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title">Acetohexamide</h5>
@@ -402,7 +415,7 @@
                         </div>
                     </div>
 
-                       <div class="col-12 medication-control">
+                       <div class="col-12 medication-control" data-medication="glipizide">
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title">Glipizide</h5>
@@ -427,7 +440,7 @@
                         </div>
                     </div>
 
-                       <div class="col-12 medication-control">
+                       <div class="col-12 medication-control" data-medication="glyburide">
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title">Glyburide</h5>
@@ -452,7 +465,7 @@
                         </div>
                     </div>
 
-                       <div class="col-12 medication-control">
+                       <div class="col-12 medication-control" data-medication="tolbutamide">
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title">Tolbutamide</h5>
@@ -477,7 +490,7 @@
                         </div>
                     </div>
 
-                       <div class="col-12 medication-control">
+                       <div class="col-12 medication-control" data-medication="pioglitazone">
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title">Pioglitazone</h5>
@@ -502,7 +515,7 @@
                         </div>
                     </div>
 
-                       <div class="col-12 medication-control">
+                       <div class="col-12 medication-control" data-medication="rosiglitazone">
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title">Rosiglitazone</h5>
@@ -527,7 +540,7 @@
                         </div>
                     </div>
 
-                       <div class="col-12 medication-control">
+                       <div class="col-12 medication-control" data-medication="acarbose">
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title">Acarbose</h5>
@@ -552,7 +565,7 @@
                         </div>
                     </div>
 
-                       <div class="col-12 medication-control">
+                       <div class="col-12 medication-control" data-medication="miglitol">
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title">Miglitol</h5>
@@ -577,7 +590,7 @@
                        </div>
                     </div>
 
-                        <div class="col-12 medication-control">
+                        <div class="col-12 medication-control" data-medication="troglitazone">
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title">Troglitazone</h5>
@@ -602,7 +615,7 @@
                         </div>
                     </div>
 
-                       <div class="col-12 medication-control">
+                       <div class="col-12 medication-control" data-medication="tolazamide">
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title">Tolazamide</h5>
@@ -627,7 +640,7 @@
                         </div>
                     </div>
 
-                       <div class="col-12 medication-control">
+                       <div class="col-12 medication-control" data-medication="examide">
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title">Examide</h5>
@@ -652,7 +665,7 @@
                         </div>
                     </div>
 
-                       <div class="col-12 medication-control">
+                       <div class="col-12 medication-control" data-medication="citoglipton">
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title">Citoglipton</h5>
@@ -677,7 +690,7 @@
                         </div>
                     </div>
 
-                       <div class="col-12 medication-control">
+                       <div class="col-12 medication-control" data-medication="glyburide-metformin">
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title">Glyburide-metformin</h5>
@@ -702,7 +715,7 @@
                         </div>
                     </div>
 
-                       <div class="col-12 medication-control">
+                       <div class="col-12 medication-control" data-medication="glipizide-metformin">
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title">Glipizide-metformin</h5>
@@ -727,7 +740,7 @@
                         </div>
                     </div>
 
-                       <div class="col-12 medication-control">
+                       <div class="col-12 medication-control" data-medication="glimepiride-pioglitazone">
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title">Glimepiride-pioglitazone</h5>
@@ -752,7 +765,7 @@
                         </div>
                     </div>
 
-                       <div class="col-12 medication-control">
+                       <div class="col-12 medication-control"  data-medication="metformin-rosiglitazone">
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title">Metformin-rosiglitazone</h5>
@@ -777,7 +790,7 @@
                         </div>
                     </div>
 
-                       <div class="col-12 medication-control">
+                       <div class="col-12 medication-control"  data-medication="metformin-pioglitazone">
                         <div class="card shadow-sm">
                             <div class="card-body">
                                 <h5 class="card-title">Metformin-pioglitazone</h5>
@@ -846,10 +859,11 @@
     }
 
     .btn-med.selected {
-        transform: scale(1.15);
-        z-index: 10 !important;
-        box-shadow: 0 0 8px rgba(0,0,0,0.2);
-    }
+    transform: scale(1.1);
+    box-shadow: 0 0 8px rgba(0,0,0,0.3);
+    z-index: 2;
+    border: 2px solid #000 !important;
+}
 
     .btn-med[data-action="up"] {
         background: #28a745;
@@ -893,6 +907,24 @@
         0%, 100% { transform: translateX(0); }
         25% { transform: translateX(-5px); }
         75% { transform: translateX(5px); }
+    }
+    
+    .patient-result-item {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+    cursor: pointer;
+    transition: background 0.3s;
+    }
+
+    .patient-result-item:hover {
+        background: #f8f9fa;
+    }
+
+    #patientResults {
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        max-height: 200px;
+        overflow-y: auto;
     }
     </style>
 
@@ -1051,7 +1083,108 @@ document.querySelectorAll('.btn-med').forEach(button => {
         control.classList.remove('is-invalid');
     });
 });
+// Función para mostrar los resultados de búsqueda
+function updatePatientResults(patients) {
+    const resultsContainer = document.getElementById('patientResults');
+    resultsContainer.innerHTML = '';
+    
+    if (patients.length === 0) {
+        resultsContainer.innerHTML = '<div class="patient-result-item text-muted">No se encontraron resultados</div>';
+        resultsContainer.classList.remove('d-none');
+        return;
+    }
 
+    patients.forEach(patient => {
+        const div = document.createElement('div');
+        div.className = 'patient-result-item';
+        div.innerHTML = `
+            <div class="fw-bold">Paciente #${patient.patient_nbr}</div>
+            <small>Edad: ${patient.age || 'N/A'}</small>
+        `;
+        
+        div.addEventListener('click', () => {
+            loadPatientData(patient.patient_nbr);
+            resultsContainer.classList.add('d-none');
+        });
+        
+        resultsContainer.appendChild(div);
+    });
+    
+    resultsContainer.classList.remove('d-none');
+}
+
+// JavaScript completo corregido
+document.addEventListener('DOMContentLoaded', () => {
+    const patientInput = document.getElementById('patientNumberInput');
+    const resultsContainer = document.getElementById('patientResults');
+    let debounceTimer;
+
+    patientInput.addEventListener('input', (e) => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(async () => {
+            const query = e.target.value;
+            if (query.length < 1) {
+                resultsContainer.classList.add('d-none');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/search-patient?q=${query}`);
+                const patients = await response.json();
+                updatePatientResults(patients);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }, 300);
+    });
+
+    // Cerrar resultados al hacer clic fuera
+    document.addEventListener('click', (e) => {
+        if (!patientInput.contains(e.target)) {
+            resultsContainer.classList.add('d-none');
+        }
+    });
+});
+
+async function loadPatientData(patientId) {
+    try {
+        const response = await fetch(`/get-patient-data/${patientId}`);
+        const patientData = await response.json();
+
+        // Load regular fields
+        Object.entries(patientData).forEach(([field, value]) => {
+            const input = document.querySelector(`[name="${field}"]`);
+            if (!input) return;
+
+            // Handle medication fields differently
+            if (field.startsWith('med_')) {
+                // Find the medication control container
+                const medicationControl = document.querySelector(`input[name="${field}"]`).closest('.medication-control');
+                
+                // Remove previous selections
+                medicationControl.querySelectorAll('.btn-med').forEach(btn => {
+                    btn.classList.remove('selected');
+                });
+
+                // Find and select the correct button
+                const targetButton = medicationControl.querySelector(`[data-action="${value}"]`);
+                if (targetButton) {
+                    targetButton.classList.add('selected');
+                    // Update the hidden input value
+                    const hiddenInput = medicationControl.querySelector('input[type="hidden"]');
+                    hiddenInput.value = value;
+                }
+            } else {
+                // Handle normal inputs
+                input.value = value;
+            }
+        });
+
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error loading patient data');
+    }
+}
     </script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </body>
