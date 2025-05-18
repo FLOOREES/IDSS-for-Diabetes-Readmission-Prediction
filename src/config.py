@@ -177,6 +177,7 @@ OUTLIER_MODE = 'visit'
 VISIT_ERROR_PERCENTILE = 98.0
 IF_N_ESTIMATORS = 100
 IF_CONTAMINATION = 'auto'
+INFERENCE_BATCH_SIZE = 64
 
 # ==============================================================================
 # 9. DATA SPLITTING & RUNTIME SETTINGS

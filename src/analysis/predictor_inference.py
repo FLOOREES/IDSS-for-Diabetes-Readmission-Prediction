@@ -15,7 +15,7 @@ from src.modeling.predictor import PredictorModel
 from src.modeling import PredictionHead
 from src.data_preparation import SequenceDataPreparer, PatientSequenceDataset, pad_collate_fn
 from src.utils.helpers import load_artifact
-from src.modeling.model_builder import build_autoencoder_from_config # Assuming this is a helper function to reconstruct the model from config
+from src.modeling.model_builder import build_autoencoder_from_config 
 
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
 
@@ -58,35 +58,47 @@ class Predictor:
             self.logger.info("Using provided pre-trained predictor model.")
 
 
-    def _load_model(self, path: str, config: Dict[str, Any], sample_batch: Dict):
-         """ Loads the trained PredictorModel checkpoint. """
-         self.logger.info(f"Loading Predictor model from {path}")
-         try:
-            # 1. Rebuild AE architecture to get Encoder
-            # This dependency on AE building is a bit awkward, consider saving/loading PredictorModel directly
-            temp_ae = build_autoencoder_from_config(sample_batch, self.logger, self.device) # Config for AE needed
+    def _load_model(self, model_pth_path: str): # Removed 'config' arg if using self.model_config
+        """ Loads the trained PredictorModel checkpoint using static config for architecture. """
+        self.logger.info(f"Loading Predictor model from {model_pth_path}")
+        if not self.model_config: # self.model_config should be the main cfg object
+            raise RuntimeError("Model configuration (main cfg) not available in Predictor for rebuilding model.")
+        try:
+            # 1. Rebuild AE architecture (via refactored builder) to get Encoder
+            # build_autoencoder_from_config now uses static config from src.config globally
+            temp_ae = build_autoencoder_from_config(logger=self.logger, device=self.device)
             encoder = temp_ae.get_encoder()
 
-            # 2. Rebuild Prediction Head
-            num_classes = config.get('num_classes', 3) # Get num_classes from config
-            hidden_dim = config.get('hidden_dim', 128) # Get hidden_dim from config
-            head = PredictionHead(input_dim=hidden_dim, output_dim=num_classes)
+            # 2. Rebuild Prediction Head using parameters from the main config
+            num_classes = getattr(self.model_config, 'NUM_CLASSES', 3)
+            encoder_hidden_dim = getattr(self.model_config, 'HIDDEN_DIM', 128)
+            head = PredictionHead(input_dim=encoder_hidden_dim, output_dim=num_classes)
 
-            # 3. Combine into PredictorModel
             self.model = PredictorModel(encoder, head)
 
-            # 4. Load state dict
-            checkpoint = load_artifact(path, device=self.device)
+            checkpoint = load_artifact(model_pth_path, device=self.device)
             if 'model_state_dict' not in checkpoint: raise KeyError("Missing 'model_state_dict'.")
             self.model.load_state_dict(checkpoint['model_state_dict'])
             self.model.to(self.device)
             self.model.eval()
-            self.logger.info("Predictor model loaded successfully.")
+            self.logger.info("Predictor model loaded successfully using static config.")
 
-         except Exception as e:
-             self.logger.error(f"Failed to load Predictor model from {path}: {e}", exc_info=True)
-             self.model = None
-             raise
+        except Exception as e:
+            self.logger.error(f"Failed to load Predictor model from {model_pth_path}: {e}", exc_info=True)
+            self.model = None
+            raise
+
+    def _move_batch_to_device(self, batch_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Helper to move all tensors in the batch (including nested ones) to device."""
+        moved_batch = {}
+        for key, value in batch_data.items():
+            if isinstance(value, torch.Tensor):
+                moved_batch[key] = value.to(self.device)
+            elif isinstance(value, dict): # For 'learned_labels', 'precomputed_labels'
+                moved_batch[key] = {k: v.to(self.device) for k, v in value.items() if isinstance(v, torch.Tensor)}
+            else: # patient_id (list), length (tensor, already handled)
+                moved_batch[key] = value 
+        return moved_batch
 
 
     def predict_sequence(self, df_patient: pd.DataFrame) -> pd.DataFrame:
@@ -108,11 +120,9 @@ class Predictor:
         batch = pad_collate_fn([dataset[0]]) # Get first (only) item and collate
 
         # Move to device
-        batch_device = {k: v.to(self.device) if isinstance(v, torch.Tensor) else v for k, v in batch.items() if k != 'features'}
-        if 'features' in batch: batch_device['features'] = batch['features']
+        batch_on_device = self._move_batch_to_device(batch)
+        logits = self.model(batch_on_device)
 
-        with torch.no_grad():
-            logits = self.model(batch_device) # (1, seq_len, num_classes)
 
         # Apply activation (Softmax for multi-class)
         probs = F.softmax(logits, dim=-1).squeeze(0).cpu().numpy() # (seq_len, num_classes)
@@ -160,7 +170,7 @@ class Predictor:
 
         dataset = PatientSequenceDataset(feature_seqs, target_seqs, patient_ids)
         # Use a reasonable batch size for inference
-        batch_size = self.data_preparer.max_seq_length * 2 if self.data_preparer.max_seq_length else 128
+        batch_size = getattr(self.model_config, 'INFERENCE_BATCH_SIZE', 128)
         data_loader = DataLoader(dataset, batch_size=batch_size, shuffle=False, collate_fn=pad_collate_fn, num_workers=0)
 
         all_predictions = [] # Store results as dicts before creating DataFrame
@@ -290,3 +300,4 @@ class Predictor:
         # self.logger.info(f"Classification Report (Weighted Avg F1): {report_dict.get('weighted avg', {}).get('f1-score', 'N/A'):.4f}")
 
         return results
+
