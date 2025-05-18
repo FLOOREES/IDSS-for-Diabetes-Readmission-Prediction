@@ -131,28 +131,129 @@ class DiabetesAgent:
         return vs
 
     def _get_patient_history_summary_for_prompt(self, raw_patient_df: pd.DataFrame) -> str:
-        # (Implementation from previous response - keeping it simple, can be enhanced later)
-        if raw_patient_df.empty: return "No patient history provided."
-        summary_parts = [f"Patient ID {raw_patient_df[self.cfg.PATIENT_ID_COL].iloc[0]} has {len(raw_patient_df)} visit(s)."]
-        if 'age' in raw_patient_df.columns: summary_parts.append(f"- Age group(s): {raw_patient_df['age'].unique().tolist()}")
-        if 'time_in_hospital' in raw_patient_df.columns: summary_parts.append(f"- Time in hospital (days): {raw_patient_df['time_in_hospital'].tolist()}")
+        """Creates a more detailed string summary of patient history for the LLM prompt."""
+        if raw_patient_df.empty:
+            return "No patient history provided for summarization."
+        
+        patient_id = raw_patient_df[self.cfg.PATIENT_ID_COL].iloc[0]
+        num_visits_in_csv = len(raw_patient_df)
+        
+        summary_parts = [
+            f"Patient ID: {patient_id}",
+            f"Number of visits in provided history: {num_visits_in_csv}"
+        ]
+
+        # Helper to get unique, clean string values from a column
+        def get_unique_col_values(df, col_name, max_items=5):
+            if col_name in df.columns:
+                valid_series = df[col_name].dropna()
+                if not valid_series.empty:
+                    unique_vals = valid_series.astype(str).unique().tolist()
+                    if unique_vals:
+                         # Filter out common non-informative placeholders if any remain after load_data
+                        unique_vals = [val for val in unique_vals if val.lower() not in ['?', '', 'none', 'nan']]
+                        if unique_vals:
+                            return f"{col_name}: {', '.join(unique_vals[:max_items])}{'...' if len(unique_vals) > max_items else ''}"
+            return None
+
+        # Key variables from your list (add more as needed)
+        key_demographics = ['race', 'gender', 'age']
+        for col in key_demographics:
+            val_str = get_unique_col_values(raw_patient_df, col)
+            if val_str: summary_parts.append(f"- {val_str}")
+
+        key_encounter_details = [
+            'admission_type_id', 'discharge_disposition_id', 'admission_source_id',
+            'time_in_hospital', 'num_lab_procedures', 'num_procedures', 'num_medications',
+            'number_outpatient', 'number_emergency', 'number_inpatient', 'number_diagnoses'
+        ]
+        for col in key_encounter_details:
+            # For numerical, maybe show range or list if few visits
+            if col in raw_patient_df.columns and pd.api.types.is_numeric_dtype(raw_patient_df[col]):
+                if num_visits_in_csv == 1:
+                    summary_parts.append(f"- {col}: {raw_patient_df[col].iloc[0]}")
+                else: # Multiple visits, show list for now
+                    summary_parts.append(f"- {col} (all visits): {raw_patient_df[col].tolist()}")
+            else: # Categorical or string
+                val_str = get_unique_col_values(raw_patient_df, col)
+                if val_str: summary_parts.append(f"- {val_str}")
+        
+        # Diagnoses (more careful handling)
         diag_cols = getattr(self.cfg, 'DIAG_COLS', ['diag_1', 'diag_2', 'diag_3'])
-        all_diags = [d for col in diag_cols if col in raw_patient_df for d_val in raw_patient_df[col].dropna().astype(str).unique() for d in [d_val] if d not in ['?', '0', 'nan', 'None', ''] and not d.isspace()]
-        if all_diags: summary_parts.append(f"- Key diagnoses (sample): {', '.join(sorted(list(set(all_diags)))[:10])}")
+        all_diags_texts = []
+        for col in diag_cols:
+            if col in raw_patient_df.columns:
+                # Get unique non-null/non-'?' diagnoses, ensuring string conversion
+                # FirstPhasePreprocessor.load_data converts '?' to np.nan.
+                col_series_str = raw_patient_df[col].dropna().astype(str)
+                valid_diags = [d for d in col_series_str.unique() if d.lower() not in ['?', '', 'none', 'nan', '0']]
+                all_diags_texts.extend(valid_diags)
+        
+        unique_diags_sample = sorted(list(set(all_diags_texts)))
+        if unique_diags_sample:
+            summary_parts.append(f"- All unique diagnosis codes mentioned: {', '.join(unique_diags_sample)}")
+        else:
+            summary_parts.append("- No specific primary/secondary diagnosis codes listed (or were placeholders).")
+
+        # Key medications (example - just list if they are not 'No')
+        # This assumes treatment columns in your config are the medication names
+        med_cols = self.cfg.TREATMENT_COLUMNS 
+        active_meds = []
+        for med_col in med_cols:
+            if med_col in raw_patient_df.columns:
+                # Check if any visit has this medication not as 'No' or '0' (after potential mapping)
+                # This depends on raw values. If raw is 'Steady', 'Up', 'Down' vs 'No'
+                if raw_patient_df[med_col].astype(str).str.lower().isin(['steady', 'up', 'down']).any():
+                    active_meds.append(med_col)
+        if active_meds:
+            summary_parts.append(f"- Key medications noted as active (Steady/Up/Down): {', '.join(active_meds)}")
+
         return "\n".join(summary_parts)
 
-    def _format_shap_explanation_for_prompt(self, shap_results: Dict[str, Any], num_top_features: int = 5) -> str:
-        # (Implementation from previous response)
-        if not shap_results or "all_class_shap_values_sequence" not in shap_results: return "SHAP explanation not available."
-        expl = ["Key factors (average SHAP magnitude across visits):"]
-        class_names = getattr(self.cfg, 'TARGET_CLASS_NAMES', [f"Class {i}" for i in range(len(shap_results['all_class_shap_values_sequence']))])
-        for i, shaps_np in enumerate(shap_results['all_class_shap_values_sequence']):
-            if shaps_np is None: continue
-            name = class_names[i] if i < len(class_names) else f"Class {i}"
-            avg_abs_shaps = pd.Series(np.abs(shaps_np).mean(axis=0), index=shap_results['encoder_input_feature_names']).sort_values(ascending=False)
-            expl.append(f"\nFor outcome '{name}':")
-            for feat, val in avg_abs_shaps.head(num_top_features).items(): expl.append(f"  - {feat} ({val:.3f})")
-        return "\n".join(expl)
+    def _format_shap_explanation_for_prompt(self, 
+                                            shap_results: Dict[str, Any], 
+                                            predicted_class_index: Optional[int], # NEW: Pass the predicted class index
+                                            num_top_features_per_class: int = 5,
+                                            num_contrast_features: int = 2) -> str:
+        if not shap_results or "all_class_shap_values_sequence" not in shap_results:
+            return "SHAP explanation data is not available or incomplete."
+
+        expl_parts = ["Key factors identified by SHAP analysis (average impact across patient's visits):"]
+        all_shaps_per_class = shap_results['all_class_shap_values_sequence']
+        feature_names = shap_results['encoder_input_feature_names']
+        
+        class_names_cfg = getattr(self.cfg, 'TARGET_CLASS_NAMES', 
+                                  [f"Class {i}" for i in range(len(all_shaps_per_class))])
+        if len(class_names_cfg) != len(all_shaps_per_class):
+            class_names_cfg = [f"Class {i}" for i in range(len(all_shaps_per_class))]
+
+        # First, detail the predicted class
+        if predicted_class_index is not None and 0 <= predicted_class_index < len(all_shaps_per_class):
+            class_shaps_np = all_shaps_per_class[predicted_class_index]
+            if class_shaps_np is not None and isinstance(class_shaps_np, np.ndarray) and class_shaps_np.ndim == 2:
+                avg_abs_shaps = pd.Series(np.abs(class_shaps_np).mean(axis=0), index=feature_names).sort_values(ascending=False)
+                class_name_str = class_names_cfg[predicted_class_index]
+                expl_parts.append(f"\nFor the predicted outcome '{class_name_str}':")
+                for feat_name, shap_val in avg_abs_shaps.head(num_top_features_per_class).items():
+                    expl_parts.append(f"  - '{feat_name}' (Avg. SHAP Magnitude: {shap_val:.3f})")
+            else:
+                expl_parts.append(f"\nSHAP values for predicted outcome '{class_names_cfg[predicted_class_index]}' are unavailable or malformed.")
+        else:
+            expl_parts.append("\nPredicted class index not available for detailed SHAP summary.")
+
+        # Optionally, add top contrastive features for other classes
+        expl_parts.append("\nFor context, other outcomes were influenced by:")
+        for i, class_shaps_np in enumerate(all_shaps_per_class):
+            if i == predicted_class_index or class_shaps_np is None or \
+               not isinstance(class_shaps_np, np.ndarray) or class_shaps_np.ndim != 2:
+                continue # Skip if it's the predicted class or data is bad
+            
+            avg_abs_shaps = pd.Series(np.abs(class_shaps_np).mean(axis=0), index=feature_names).sort_values(ascending=False)
+            class_name_str = class_names_cfg[i]
+            expl_parts.append(f"  Outcome '{class_name_str}': Top factors included " +
+                              ", ".join([f"'{fn}' ({fv:.2f})" for fn, fv in avg_abs_shaps.head(num_contrast_features).items()]))
+        
+        return "\n".join(expl_parts)
 
     def _get_model_prediction_summary(self, prediction_result: Dict[str, Any]) -> str:
         # (Implementation from previous response)
@@ -167,39 +268,60 @@ class DiabetesAgent:
     def _create_final_llm_prompt(self, 
                                  patient_history_summary: str, 
                                  model_prediction_summary: str, 
-                                 shap_explanation_summary: str,
-                                 retrieved_docs_summary: str) -> str: # Added 'retrieved_docs_summary'
-        """Creates the comprehensive prompt for the LLM, including RAG instructions."""
+                                 shap_explanation_summary: str, # Summary of SHAP for predicted class
+                                 retrieved_docs_summary: str) -> str:
         
-        prompt = f"""You are an expert medical AI assistant explaining a machine learning model's prediction about patient readmission to a medical professional. Your explanation MUST be grounded in all provided information.
+        prompt = f"""You are an expert medical AI assistant explaining a machine learning model's prediction about patient readmission to a medical professional. Your task is to provide a comprehensive, well-justified explanation grounded in all provided information.
 
-Instructions for your explanation:
-1.  **State the Model's Prediction:** Clearly state the predicted readmission category and probabilities.
-2.  **Identify Key Predictive Factors:** Based on SHAP, list the top 2-3 influential factors FOR THE PREDICTED CLASS.
-3.  **Explain the "Why" - Synthesize and Reason:**
-    * For each key factor, briefly explain its potential connection to readmission risk using the patient's specific history.
-    * **Crucially, you MUST explicitly reference and integrate insights from the 'Retrieved Context from Medical Documents' section below to support your reasoning.** For example, if 'number_outpatient' is a key factor and the retrieved context mentions 'frequent outpatient visits reduce readmission risk...', you MUST connect this.
-    * Your goal is to build a logical bridge: Patient Data -> SHAP Factors -> Medical Knowledge (from Retrieved Context) -> Prediction Explanation.
-4.  **Professionalism and Constraints:** Objective, informative, explain model output only. DO NOT provide medical advice or new diagnoses.
-5.  **Conciseness:** Be thorough in reasoning but concise.
+**Instructions for Your Explanation:**
+
+1.  **State the Model's Prediction:**
+    * Clearly state the model's predicted readmission category for the patient's latest encounter and the associated probabilities for all classes.
+
+2.  **Explain Key Factors for the Prediction (SHAP Insights + Patient Data):**
+    * Focus on the top influential factors (provided in the SHAP summary) that drove the model towards its specific prediction for THIS patient.
+    * For each *interpretable* factor (e.g., 'number_outpatient', 'age', 'admission_type_id_X', 'num_lab_procedures'):
+        * Mention the patient's actual value for this factor from their history summary if available.
+        * Explain its likely directional influence (e.g., "a *high* number_outpatient appears to *decrease* readmission risk according to the model for this patient").
+        * **Crucially, integrate and cite supporting evidence or context from the 'Retrieved Context from Medical Documents' section below.** For instance: "The patient had [X] outpatient visits, a key factor. This aligns with information from [Source Doc Y], which suggests that frequent outpatient follow-ups are associated with better chronic disease management and potentially lower readmission rates."
+    * For `emb_dim_X` factors:
+        * Acknowledge these represent complex patterns learned by the model from coded data (like diagnoses, specific admission/discharge types).
+        * State their general influence (e.g., "`emb_dim_28` strongly contributed to predicting no readmission").
+        * If the 'Retrieved Context' mentions specific diagnoses or conditions present in the patient's history (e.g., patient has 'diag_X', RAG found info on 'diag_X'), try to make a plausible link if an embedding related to diagnoses is a top SHAP factor.
+
+3.  **Critical Analysis & Contextualization (IMPORTANT - Model vs. Medical Knowledge):**
+    * After explaining the model's reasoning based on its features, consider the 'Retrieved Context from Medical Documents'.
+    * **If the retrieved medical knowledge presents any nuances, alternative perspectives, or factors that seem to contradict or add important context to the model's prediction for this specific patient profile, you MUST discuss this.**
+    * For example: "While the model predicts [X] primarily due to [SHAP factor Y], it's noteworthy that [Retrieved Doc Z] highlights that patients with [patient characteristic A also present in history] can sometimes have [different outcome/nuance]. This suggests that while the model focused on [SHAP factor Y], clinical judgment should also consider [factor from RAG/history]."
+    * The goal is NOT to say the model is wrong, but to provide a balanced perspective by integrating broader medical knowledge. If the model and RAG context align, state that as well.
+
+4.  **Professionalism and Constraints:**
+    * Maintain a professional, objective, and highly informative tone suitable for a medical professional.
+    * The explanation must be about the MODEL'S PREDICTION and its drivers, contextualized by medical knowledge.
+    * **Absolutely DO NOT provide direct medical advice, new diagnoses, or treatment recommendations.**
+    * Frame any discussion of medical concepts from retrieved documents as "general medical knowledge indicates..." or "studies like [Source Doc X] suggest..."
+
+5.  **Structure and Conciseness:**
+    * Organize your explanation logically.
+    * Be as concise as possible while ensuring thoroughness in reasoning and justification.
 
 ---
-PROVIDED INFORMATION:
+**PROVIDED INFORMATION FOR SYNTHESIS:**
 
-Patient History Summary:
+**1. Patient History Summary:**
 {patient_history_summary}
 ---
-Model's Prediction for the Latest Encounter:
+**2. Model's Prediction for the Latest Encounter:**
 {model_prediction_summary}
 ---
-Key Factors Influencing the Model (SHAP - average impact across patient's visits):
-{shap_explanation_summary}
+**3. Key Factors Influencing the Model (SHAP - average impact across patient's visits for various outcomes):**
+{shap_explanation_summary} 
 ---
-Retrieved Context from Medical Documents: 
+**4. Retrieved Context from Medical Documents (Use this to justify/contextualize the "Why"):**
 {retrieved_docs_summary} 
 ---
 
-DETAILED EXPLANATION FOR THE MEDICAL PROFESSIONAL (ensure you explicitly refer to how the 'Retrieved Context' supports the link between SHAP factors and the prediction):
+**DETAILED AND JUSTIFIED EXPLANATION FOR THE MEDICAL PROFESSIONAL:**
 """
         return prompt
 
@@ -240,6 +362,10 @@ DETAILED EXPLANATION FOR THE MEDICAL PROFESSIONAL (ensure you explicitly refer t
             return {"error": f"Model prediction step failed: {str(e)}"}
 
         # 3. Prepare SHAP background data (if SHAP is to be generated)
+        predicted_class_idx = None
+        if prediction_result_dict and prediction_result_dict.get("visit_predictions"):
+            last_visit_preds = prediction_result_dict["visit_predictions"][-1]
+            predicted_class_idx = last_visit_preds.get("predicted_class")
         shap_results_dict = None # Initialize
         shap_explanation_summary = "SHAP analysis was not performed or failed." # Default summary
 
@@ -270,7 +396,7 @@ DETAILED EXPLANATION FOR THE MEDICAL PROFESSIONAL (ensure you explicitly refer t
                     config_ohe_actual_cols=ohe_actual_cols
                 )
                 if shap_results_dict:
-                    shap_explanation_summary = self._format_shap_explanation_for_prompt(shap_results_dict)
+                    shap_explanation_summary = self._format_shap_explanation_for_prompt(shap_results_dict, predicted_class_index=predicted_class_idx, num_top_features_per_class=5)
                 else:
                     logger.warning("SHAP explanation generation returned no results.")
                     shap_explanation_summary = "SHAP analysis completed but yielded no specific feature explanations."
@@ -298,7 +424,7 @@ DETAILED EXPLANATION FOR THE MEDICAL PROFESSIONAL (ensure you explicitly refer t
             logger.info(f"Focused RAG query: {focused_rag_query}")
             
             retriever = self.vectorstore.as_retriever(
-                search_kwargs={"k": getattr(self.cfg, "RAG_NUM_DOCS_TO_RETRIEVE", 2)} # Retrieve 2-3 focused docs
+                search_kwargs={"k": getattr(self.cfg, "RAG_NUM_DOCS_TO_RETRIEVE", getattr(self.cfg, "RAG_NUM_CHUNKS_TO_RETRIEVE", 5))}
             )
             try:
                 source_documents = retriever.get_relevant_documents(focused_rag_query)
