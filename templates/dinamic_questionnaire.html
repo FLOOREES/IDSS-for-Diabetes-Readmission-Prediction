@@ -825,10 +825,10 @@
             </div>
             <!-- Último paso -->
             <div class="step" data-step="6">
-                <h3>Final Details</h3>
+                <h3>Add the diagnoses for the patient</h3>
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label class="form-label">Diagnosis 1</label>
+                        <label class="form-label">First Diagnose</label>
                         <div class="input-group">
                             <input type="text"
                                    class="form-control"
@@ -842,15 +842,41 @@
                                 <i class="fas fa-search"></i>
                             </button>
                         </div>
-                        <div id="diag1Results" class="mt-2 d-none"></div>
+                        <div id="diag1InputResults" class="mt-2 d-none"></div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Diagnosis 2</label>
-                        <input type="text" class="form-control" name="diag_2" required>
+                        <label class="form-label">Second Diagnose</label>
+                        <div class="input-group">
+                            <input type="text"
+                                   class="form-control"
+                                   name="diag_2"
+                                   id="diag2Input"
+                                   required
+                                   autocomplete="off">
+                            <button type="button"
+                                    class="btn btn-outline-primary"
+                                    id="searchDiag2Btn">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <div id="diag2InputResults" class="mt-2 d-none"></div>
                     </div>
                     <div class="col-md-6">
-                        <label class="form-label">Diagnosis 3</label>
-                        <input type="text" class="form-control" name="diag_3" required>
+                        <label class="form-label">Third Diagnose</label>
+                        <div class="input-group">
+                            <input type="text"
+                                   class="form-control"
+                                   name="diag_3"
+                                   id="diag3Input"
+                                   required
+                                   autocomplete="off">
+                            <button type="button"
+                                    class="btn btn-outline-primary"
+                                    id="searchDiag3Btn">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                        <div id="diag3InputResults" class="mt-2 d-none"></div>
                     </div>
                 </div>
                 <div class="mt-3">
@@ -1222,61 +1248,82 @@ async function loadPatientData(patientId) {
         }
     }
 
-    // Autocomplete for diag_1
-    function updateDiag1Results(results) {
-        const resultsContainer = document.getElementById('diag1Results');
+    // Autocomplete for diag_1, diag_2, diag_3
+    function updateDiagResults(inputId, results) {
+        const resultsContainer = document.getElementById(inputId + 'Results');
         resultsContainer.innerHTML = '';
 
         if (results.length === 0) {
-        resultsContainer.innerHTML = '<div class="patient-result-item text-muted">No se encontraron resultados</div>';
-        resultsContainer.classList.remove('d-none');
-        return;
+            resultsContainer.innerHTML = '<div class="patient-result-item text-muted">No se encontraron resultados</div>';
+            resultsContainer.classList.remove('d-none');
+            return;
         }
 
         results.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'patient-result-item';
-        div.innerHTML = `
-            <div class="fw-bold">${item.numero}</div>
-            <small>${item.desc || ''}</small>
-        `;
-        div.addEventListener('click', () => {
-            document.getElementById('diag1Input').value = item.numero;
-            resultsContainer.classList.add('d-none');
-        });
-        resultsContainer.appendChild(div);
+            const div = document.createElement('div');
+            div.className = 'patient-result-item';
+            div.innerHTML = `
+                <div class="fw-bold">${item.numero}</div>
+                <small>${item.desc || ''}</small>
+            `;
+            div.addEventListener('click', () => {
+                document.getElementById(inputId).value = item.numero;
+                resultsContainer.classList.add('d-none');
+            });
+            resultsContainer.appendChild(div);
         });
 
         resultsContainer.classList.remove('d-none');
     }
 
     document.addEventListener('DOMContentLoaded', () => {
-        const diag1Input = document.getElementById('diag1Input');
-        const diag1Results = document.getElementById('diag1Results');
-        let diag1Debounce;
-
-        diag1Input.addEventListener('input', (e) => {
-        clearTimeout(diag1Debounce);
-        diag1Debounce = setTimeout(async () => {
-            const query = e.target.value;
-            if (query.length < 1) {
-            diag1Results.classList.add('d-none');
-            return;
+        ['diag1Input', 'diag2Input', 'diag3Input'].forEach((inputId, idx) => {
+            // Map inputId to field name in form
+            let fieldName = ['diag_1', 'diag_2', 'diag_3'][idx];
+            let input = document.getElementById(inputId);
+            let resultsContainer = document.getElementById(inputId + 'Results');
+            if (!input) {
+                // Try to assign id to input if not present (for diag_2 and diag_3)
+                const field = document.querySelector(`[name="${fieldName}"]`);
+                if (field) {
+                    field.id = inputId;
+                    // Create results container if not present
+                    if (!document.getElementById(inputId + 'Results')) {
+                        const div = document.createElement('div');
+                        div.id = inputId + 'Results';
+                        div.className = 'mt-2 d-none';
+                        field.parentNode.appendChild(div);
+                    }
+                    input = field;
+                    resultsContainer = document.getElementById(inputId + 'Results');
+                }
             }
-            try {
-            const response = await fetch(`/search/icd9?q=${encodeURIComponent(query)}`);
-            const results = await response.json();
-            updateDiag1Results(results);
-            } catch (error) {
-            console.error('Error:', error);
-            }
-        }, 300);
-        });
+            if (!input) return;
 
-        document.addEventListener('click', (e) => {
-        if (!diag1Input.contains(e.target) && !diag1Results.contains(e.target)) {
-            diag1Results.classList.add('d-none');
-        }
+            let debounce;
+            input.addEventListener('input', (e) => {
+                clearTimeout(debounce);
+                debounce = setTimeout(async () => {
+                    const query = e.target.value;
+                    if (query.length < 1) {
+                        resultsContainer.classList.add('d-none');
+                        return;
+                    }
+                    try {
+                        const response = await fetch(`/search/icd9?q=${encodeURIComponent(query)}`);
+                        const results = await response.json();
+                        updateDiagResults(inputId, results);
+                    } catch (error) {
+                        console.error('Error:', error);
+                    }
+                }, 300);
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!input.contains(e.target) && !resultsContainer.contains(e.target)) {
+                    resultsContainer.classList.add('d-none');
+                }
+            });
         });
     });
     </script>
