@@ -285,24 +285,25 @@ class DiabetesAgent:
         1.  **Factor & Patient's Value:** Clearly state the factor (e.g., 'number_outpatient', 'age', 'emb_dim_28'). Then, reference the 'Patient History Summary' below and state the patient's actual value or relevant characteristic for this factor (e.g., "The patient had [X] outpatient visits," or "The patient's age group is [Y]").
         2.  **Model's Interpretation (Directional Influence):** Explain how this specific factor value, according to its SHAP importance, likely influenced the model's prediction (e.g., "This high number of outpatient visits appears to have significantly *decreased* the model's assessed risk of readmission, contributing to the 'Class 0' prediction.").
         3.  **Evidence from Retrieved Documents (CRITICAL):** You MUST consult the 'Retrieved Context from Medical Documents' section provided below.
-            * If a retrieved document offers supporting evidence, counter-evidence, or relevant medical context for why this factor might influence readmission risk in diabetic patients, you **MUST explicitly cite that document using its title and page number** (e.g., "This aligns with findings in the document titled 'Intensive Blood Glucose Control...' (Doc 1, Page 8), which indicates that...").
-            * If multiple documents support a point, you can synthesize or pick the most relevant. If no directly relevant snippet is found for a specific factor, state that clearly (e.g., "The provided medical documents do not offer specific context on this particular embedding dimension's direct link to readmission, though it represents learned patterns from clinical codes.").
-        4.  **Interpreting Embedding Dimensions:** For factors named `emb_dim_X`:
-            * Acknowledge they represent complex, learned patterns from coded clinical data (like diagnoses, admission/discharge types, or specific medication groups).
+            * If a retrieved document offers supporting evidence, counter-evidence, or relevant medical context for why this factor might influence readmission risk in diabetic patients, you **MUST explicitly cite that document using its title and page number if available** (e.g., "This observation is contextualized by the document titled 'Intensive Blood Glucose Control...' (Doc 1, Page 8), which indicates that...").
+            * If multiple documents support a point, synthesize them. If no directly relevant snippet is found for a specific factor, clearly state that (e.g., "The provided medical documents do not offer specific context on this factor's direct link to readmission for this patient profile.").
+        4.  **Interpreting Embedding Dimensions:** For factors named `emb_dim_X` or similar (e.g., `diag_1_emb_X`):
+            * Acknowledge these represent complex, learned patterns from coded clinical data (like diagnoses, admission/discharge types, or specific medication groups).
             * State their general influence based on SHAP (e.g., "`emb_dim_28` strongly pushed the prediction towards 'no readmission'").
-            * If possible, try to correlate this with information in the 'Patient History Summary' (e.g., "Given the patient's listed diagnoses of '574' and '599', this important embedding dimension might be capturing patterns related to these conditions or their typical management pathways."). Then, link to RAG if any retrieved document discusses these conditions.
+            * If possible, correlate this with information in the 'Patient History Summary' (e.g., "Given the patient's listed diagnoses of '574' and '599', this important embedding dimension might be capturing patterns related to these conditions."). Then, link to the 'Retrieved Context' if any document discusses these conditions in relation to risk.
 
-**Section 3: Synthesis and Critical Contextualization (Model vs. Broader Medical Knowledge)**
-    * Provide a brief overall synthesis of why the model arrived at its prediction, based on the interaction of the key factors.
-    * Review the 'Retrieved Context from Medical Documents' again. Does this broader medical knowledge introduce any important nuances, additional risk factors present in the patient's history that the model *didn't* strongly pick up on (or SHAP didn't highlight as top for the prediction), or alternative perspectives relevant to this patient's profile?
-    * For example: "While the model's prediction of [X] is strongly driven by [Factor A and B], it's important to note from the paper titled '[Relevant Doc Title]' that [Patient Characteristic C from history] is also a significant risk factor for readmission in diabetic patients, even if not ranked as a top driver by this specific model for this prediction. This warrants clinical consideration."
-    * The goal is NOT to contradict the model without basis or give medical advice, but to provide a balanced, professional perspective by integrating the model's view with broader medical understanding when the retrieved documents allow. If the model's reasoning aligns well with the documents, highlight that alignment.
+**Section 3: Overall Synthesis, Prediction Grounding, and Clinical Contextualization**
+    * **Overall Rationale for Prediction:** Provide a brief overall synthesis explaining why the model likely arrived at its prediction, based on the interaction of the key factors discussed above and the patient's specific data.
+    * **Assessment of Prediction Grounding:** Review the 'Retrieved Context from Medical Documents'. Based on the alignment (or divergence) between the model's key predictive factors, the patient's specific history, and the insights from these documents, provide an assessment of how well-grounded the model's prediction appears.
+        * If the model's prediction and its drivers align well with information from the retrieved documents and the patient's context, state this coherence (e.g., "The model's prediction of [Class X] appears consistent with general medical understanding, as [Document Title Y] suggests that factors like [Factor A] and [Factor B] (which were important for this patient) are indeed linked to such outcomes.").
+        * If the retrieved medical knowledge introduces important nuances, alternative perspectives, or highlights other significant patient factors (from their history) that the model did *not* strongly emphasize, you MUST discuss this critically. For example: "While the model's prediction of [Class X] is strongly driven by [Factor A], the document '[Relevant Doc Title]' also highlights [Factor D from RAG/history] as a critical risk for patients with [Patient Characteristic C from history]. This suggests that while the model focused on [Factor A], broader clinical context indicates [Factor D] also warrants significant consideration in the overall clinical picture."
+    * **Concluding Remarks:** Offer a final summary statement about the model's prediction in light of all available information. This is not about making a new prediction or giving new probabilities, but about framing the model's output within a richer, evidence-informed clinical context.
 
-**Strict Constraints:**
-    * Your entire response must be objective and analytical.
-    * Focus SOLELY on explaining the model's prediction based on the provided data.
-    * **DO NOT, under any circumstances, provide medical advice, suggest treatments, or make new diagnoses.**
-    * All references to medical knowledge must be attributed to the "Retrieved Context from Medical Documents" section, citing titles and page numbers.
+**Strict Constraints (Reiteration):**
+    * Maintain a professional, objective, and highly informative tone.
+    * The explanation must be about the MODEL'S PREDICTION and its drivers.
+    * **Absolutely DO NOT provide direct medical advice, suggest treatments, or make new diagnoses.**
+    * Attribute all medical knowledge claims to the "Retrieved Context from Medical Documents" by citing titles (and page numbers, if provided in the context).
 
 ---
 **PROVIDED INFORMATION FOR SYNTHESIS:**
@@ -313,14 +314,14 @@ class DiabetesAgent:
 **2. Model's Prediction for the Latest Encounter:**
 {model_prediction_summary}
 ---
-**3. Key Factors Influencing the Model (SHAP - average impact across patient's visits for the predicted class and potentially others):**
+**3. Key Factors Influencing the Model (SHAP - average impact across patient's visits for various outcomes):**
 {shap_explanation_summary} 
 ---
-**4. Retrieved Context from Medical Documents (Use this to justify/contextualize the "Why", citing with Title and Page):**
+**4. Retrieved Context from Medical Documents (Use this to justify/contextualize the "Why", citing with Title and Page as available in this section):**
 {retrieved_docs_summary} 
 ---
 
-**EXPERT CLINICAL AI ANALYST REPORT:**
+**EXPERT CLINICAL AI ANALYST REPORT (Follow the structured sections and all instructions meticulously):**
 """
         return prompt
 
