@@ -1,17 +1,16 @@
 
-import shap
+#import shap
 import os
 from dotenv import load_dotenv
-from embedding_maker import vectorstore_loader, vectorstore_maker
+from src.agent.embedding_maker import vectorstore_loader, vectorstore_maker
 from langchain_google_genai.chat_models import ChatGoogleGenerativeAI
 from langchain.chains import RetrievalQA
 
-DOC_FOLDER = "C:/Users/lukag/OneDrive/Desktop/Universidad/3ero/cuadrimestre2/PAID/github/IDSS-for-Diabetes-Readmission-Prediction/src/agent/Diabetes_docs/"
-DB_NAME = "C:/Users/lukag/OneDrive/Desktop/Universidad/3ero/cuadrimestre2/PAID/github/IDSS-for-Diabetes-Readmission-Prediction/src/agent/db_place"
+DOC_FOLDER = "./src/agent/Diabetes_docs/"
+DB_NAME = "./src/agent/db_place"
 
 load_dotenv()
-api_key = os.getenv("gemini_key")
-os.environ["GOOGLE_API_KEY"] = api_key
+os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
 
 
 # Model y data por defecto son NOne pero solo para pruebas, en la version final se tiene que quitar
