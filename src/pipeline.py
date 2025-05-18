@@ -17,6 +17,7 @@ from pathlib import Path # Using Path for consistency
 
 from typing import Tuple, Dict, Any, Optional, List
 from torch.utils.data import DataLoader
+from functools import partial
 
 # Project imports (ensure these paths are correct relative to your project structure)
 from .preprocessing.first_phase import FirstPhasePreprocessor
@@ -275,8 +276,11 @@ class Pipeline:
         num_workers = getattr(self.cfg, 'DATALOADER_NUM_WORKERS', 2) 
         pin_memory = getattr(self.cfg, 'DATALOADER_PIN_MEMORY', True)
 
-        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=pad_collate_fn, num_workers=num_workers, pin_memory=pin_memory)
-        val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=pad_collate_fn, num_workers=num_workers, pin_memory=pin_memory)
+        max_len_for_padding = getattr(self.cfg, 'MAX_SEQ_LENGTH', None)
+        collate_fn_configured = partial(pad_collate_fn, enforced_max_len=max_len_for_padding)
+
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn_configured, num_workers=num_workers, pin_memory=pin_memory)
+        val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn_configured, num_workers=num_workers, pin_memory=pin_memory)
         logger.info("Train and Validation DataLoaders created.")
         return train_loader, val_loader
 
