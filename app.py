@@ -42,18 +42,15 @@ def create_app():
             if item['icd9'].startswith(query):
                 results.append({"numero": item["icd9"], "desc": item["descLong"]})
 
-            elif item["threedigit"].startswith(query):
-                if "subchapter" in item.keys():
-                    results.append({"numero": item["threedigit"], "desc": item["major"] + " " + item["subchapter"] + " " + item["chapter"]})
-                else:
-                    results.append({"numero": item["threedigit"], "desc": item["major"] + " " + item["chapter"]})
-
-            elif query.lower() in item["descLong"].lower():
-                results.append({"numero": item["icd9"], "desc": item["descLong"]})
-
-            
-            elif query.lower() in description.lower():
+            if item["threedigit"].startswith(query):
                 results.append({"numero": item["threedigit"], "desc": description})
+            
+            if not query.lower().isdigit():
+                if query.lower() in item["descLong"].lower():
+                    results.append({"numero": item["icd9"], "desc": item["descLong"]})
+                
+                if query.lower() in description.lower():
+                    results.append({"numero": item["threedigit"], "desc": description})
         return jsonify(results)
     
     # @app.route('/search/icd9/<icd9>')
