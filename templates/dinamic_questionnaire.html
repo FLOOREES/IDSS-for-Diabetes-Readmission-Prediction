@@ -42,7 +42,7 @@
                 <div class="row g-3">
                     <div class="col-md-6">
                         <label class="form-label">Encounter ID</label>
-                        <input type="number" class="form-control" name="encounter_id" required>
+                        <input type="number" class="form-control" name="encounter_id" required min="0">
                     </div>
                     <div class="col-md-6">
                     <label class="form-label">Patient Number</label>
@@ -52,7 +52,8 @@
                             name="patient_nbr" 
                             id="patientNumberInput"
                             required
-                            autocomplete="off">
+                            autocomplete="off"
+                            min="0">
                         <button type="button" 
                                 class="btn btn-outline-primary" 
                                 id="searchPatientBtn">
@@ -81,7 +82,7 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Age</label>
-                        <input type="number" class="form-control" name="age" required max="130">
+                        <input type="number" class="form-control" name="age" required min="1" max="130">
                             
                     </div>
                 </div>
@@ -96,19 +97,19 @@
 
                 <div class="col-md-6">
                     <label class="form-label">Time in Hospital (days)</label>
-                    <input type="number" class="form-control" name="time_in_hospital" required max="1000">
+                    <input type="number" class="form-control" name="time_in_hospital" required min="0" max="1000">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Number of Diagnoses</label>
-                    <input type="number" class="form-control" name="number_diagnoses" required max="50">
+                    <input type="number" class="form-control" name="number_diagnoses" required min="0" max="50">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Number of Outpatient Visits</label>
-                    <input type="number" class="form-control" name="number_outpatient" required max="100">
+                    <input type="number" class="form-control" name="number_outpatient" required min="0" max="100">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Number of Inpatient Visits</label>
-                    <input type="number" class="form-control" name="number_inpatient" required max = "100">
+                    <input type="number" class="form-control" name="number_inpatient" required min="0" max = "100">
                 </div>
                 </div>
                 <div class="mt-3">
@@ -207,23 +208,23 @@
 
                 <div class="col-md-6">
                     <label class="form-label">Number of lab tests performed</label>
-                    <input type="number" class="form-control" name="num_lab_procedures" required max="100">
+                    <input type="number" class="form-control" name="num_lab_procedures" required min="0" max="100">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Number of procedures performed (not lab ones)</label>
-                    <input type="number" class="form-control" name="num_procedures" required max="50">
+                    <input type="number" class="form-control" name="num_procedures" required min="0" max="50">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Number of emergency visits in the previous year</label>
-                    <input type="number" class="form-control" name="number_emergency" required max="100">
+                    <input type="number" class="form-control" name="number_emergency" required min="0" max="100">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Number of medications administrated</label>
-                    <input type="number" class="form-control" name="num_medications" required max = "50">
+                    <input type="number" class="form-control" name="num_medications" required min="0" max = "50">
                 </div>
                 <div class="col-md-4">
                     <label class="form-label">Number of diagnoses recorded in the system</label>
-                    <input type="number" class="form-control" name="number_diagnoses" required max = "50">
+                    <input type="number" class="form-control" name="number_diagnoses" required min="0" max = "50">
                 </div>
                 </div>
                 <div class="mt-3">
@@ -834,7 +835,6 @@
                                    class="form-control"
                                    name="diag_1"
                                    id="diag1Input"
-                                   required
                                    autocomplete="off">
                             <button type="button"
                                     class="btn btn-outline-primary"
@@ -851,7 +851,6 @@
                                    class="form-control"
                                    name="diag_2"
                                    id="diag2Input"
-                                   required
                                    autocomplete="off">
                             <button type="button"
                                     class="btn btn-outline-primary"
@@ -868,7 +867,7 @@
                                    class="form-control"
                                    name="diag_3"
                                    id="diag3Input"
-                                   required
+                                   
                                    autocomplete="off">
                             <button type="button"
                                     class="btn btn-outline-primary"
@@ -1082,6 +1081,23 @@ document.querySelectorAll('.btn-med').forEach(button => {
         console.log(`Campo ${input.name} actualizado a: ${input.value}`); // Para depuración
     });
 });
+    // Validación al enviar el formulario
+    const form = document.querySelector('form');
+    form.addEventListener('submit', e => {
+        let allValid = true;
+        ['diag1Input', 'diag2Input', 'diag3Input'].forEach(inputId => {
+            const input = document.getElementById(inputId);
+            // Si el campo no está vacío, debe coincidir con el valor seleccionado
+            if (input.value && input.value !== input.dataset.selected) {
+                allValid = false;
+            }
+        });
+        if (!allValid) {
+            e.preventDefault();
+            alert('Por favor, selecciona un diagnóstico válido de la lista.');
+        }
+    });
+
     document.querySelector('form').addEventListener('submit', function(e) {
     // Validate medications
     const invalidMedications = [];
@@ -1250,31 +1266,52 @@ async function loadPatientData(patientId) {
 
     // Autocomplete for diag_1, diag_2, diag_3
     function updateDiagResults(inputId, results) {
-        const resultsContainer = document.getElementById(inputId + 'Results');
-        resultsContainer.innerHTML = '';
+    const resultsContainer = document.getElementById(inputId + 'Results');
+    const input = document.getElementById(inputId);
+    resultsContainer.innerHTML = '';
 
-        if (results.length === 0) {
-            resultsContainer.innerHTML = '<div class="patient-result-item text-muted">No se encontraron resultados</div>';
-            resultsContainer.classList.remove('d-none');
-            return;
-        }
-
-        results.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'patient-result-item';
-            div.innerHTML = `
-                <div class="fw-bold">${item.numero}</div>
-                <small>${item.desc || ''}</small>
-            `;
-            div.addEventListener('click', () => {
-                document.getElementById(inputId).value = item.numero;
-                resultsContainer.classList.add('d-none');
-            });
-            resultsContainer.appendChild(div);
-        });
-
+    if (results.length === 0) {
+        resultsContainer.innerHTML = '<div class="patient-result-item text-muted">No se encontraron resultados</div>';
         resultsContainer.classList.remove('d-none');
+        return;
     }
+
+    results.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'patient-result-item';
+        div.innerHTML = `
+            <div class="fw-bold">${item.numero}</div>
+            <small>${item.desc || ''}</small>
+        `;
+        div.addEventListener('click', () => {
+            // 1) Rellenar el input
+            input.value = item.numero;
+            // 2) Guardar valor “válido” en un data-attribute
+            input.dataset.selected = item.numero;
+            // 3) Ocultar la lista
+            resultsContainer.classList.add('d-none');
+        });
+        resultsContainer.appendChild(div);
+    });
+
+    resultsContainer.classList.remove('d-none');
+    }
+
+    ['diag1Input', 'diag2Input', 'diag3Input'].forEach(inputId => {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+
+        input.addEventListener('blur', () => {
+            // Pequeño delay para que haga click en la sugerencia antes de validar
+            setTimeout(() => {
+                const valid = input.dataset.selected;
+                if (!valid || input.value !== valid) {
+                    input.value = '';             // Limpia si no coincide
+                    delete input.dataset.selected; // Resetea el data-attribute
+                }
+            }, 200);
+        });
+    });
 
     document.addEventListener('DOMContentLoaded', () => {
         ['diag1Input', 'diag2Input', 'diag3Input'].forEach((inputId, idx) => {

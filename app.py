@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, session, flash, redirect, url_for, jsonify
 import pandas as pd
 import os
+from src.inference.predictor_engine import SinglePatientPredictorEngine 
+from src import config as AppConfig  
 import json
 
 file_dir = os.path.dirname(__file__)
@@ -22,6 +24,10 @@ def create_app():
     @app.route('/')
     def titulo():
         return render_template('titulo.html')
+    
+    @app.route('/results')
+    def results():
+        return render_template('results.html')
     
     @app.route('/diagnosis-questionnaire')
     def questionnaire():
@@ -106,9 +112,11 @@ def create_app():
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(filepath)  # Guarda el archivo en el servidor
 
+            engine = SinglePatientPredictorEngine(AppConfig) 
+            engine.predict_for_patient(raw_patient_df)
             
-            agent = MedicalAgent(db_path=filepath, documents_path='documents',latent=False)
-            exp_dic = agent.explain_diagnosis()
+            #agent = MedicalAgent(db_path=filepath, documents_path='documents',latent=False)
+            #exp_dic = agent.explain_diagnosis()
 
             print(exp_dic)
             l=[]
@@ -183,55 +191,67 @@ def create_app():
         user_data = {
             'encounter_id': encounter_id,
             'patient_nbr': patient_id,
-            'age': age,
             'race': race,
             'gender': gender,
-            'admission_source_id': admission_source_id,
+            'age': age//10,
+            'weight': '',
             'admission_type_id': admission_type_id,
             'discharge_disposition_id': discharge_disposition_id,
+            'admission_source_id': admission_source_id,
             'time_in_hospital': time_in_hospital,
+            'payer_code': '',
+            'medical_specialty': '',
             'num_lab_procedures': num_lab_procedures,
             'num_procedures': num_procedures,
             'num_medications': num_medications,
             'number_outpatient': number_outpatient,
             'number_emergency': number_emergency,
             'number_inpatient': number_inpatient,
+            'diag_1': diag_1 if diag_1 != '' else '?',
+            'diag_2': diag_2 if diag_2 != '' else '?',
+            'diag_3': diag_3 if diag_3 != '' else '?',
             'number_diagnoses': number_diagnoses,
+            'max_glu_serum': '',
+            'A1Cresult': '',
             'metformin': metformin,
             'repaglinide': repaglinide,
             'nateglinide': nateglinide,
             'chlorpropamide': chlorpropamide,
             'glimepiride': glimepiride,
             'acetohexamide': acetohexamide,
+            'glipizide': glipizide,
+            'glyburide': glyburide,
+            'tolbutamide': tolbutamide,
+            'pioglitazone': pioglitazone,
+            'rosiglitazone': rosiglitazone,
+            'acarbose': acarbose,
             'miglitol': miglitol,
             'troglitazone': troglitazone,
             'tolazamide': tolazamide,
+            'examide': examide,
+            'citoglipton': citoglipton,
+            'insulin': insulin,
             'glyburide-metformin': glyburide_metformin,
             'glipizide-metformin': glipizide_metformin,
             'glimepiride-pioglitazone': glimepiride_pioglitazone,
             'metformin-rosiglitazone': metformin_rosiglitazone,
             'metformin-pioglitazone': metformin_pioglitazone,
-            'acarbose': acarbose,
-            'insulin': insulin,
-            'glyburide': glyburide,
-            'pioglitazone': pioglitazone,
-            'examide': examide,
-            'citoglipton': citoglipton,
-            'glipizide': glipizide,
-            'tolbutamide': tolbutamide,
-            'rosiglitazone': rosiglitazone,
-            'diag_1': diag_1,
-            'diag_2': diag_2,
-            'diag_3': diag_3
+            'change': '',
+            'diabetesMed': '',
+            'readmitted': ''
         }
         User = pd.DataFrame(user_data, index=[0])
         User.to_csv('uploads/latent_data.csv', index=False)
 
-        agent = MedicalAgent(db_path='uploads/latent_data.csv', documents_path='./documents',latent=True)
-        exp_dic = agent.explain_diagnosis()
+        engine = SinglePatientPredictorEngine(AppConfig) # Pythonresult = 
+        preds = engine.predict_for_patient(User)
+        print(preds)
+
+        # agent = MedicalAgent(db_path='uploads/latent_data.csv', documents_path='./documents',latent=True)
+        # exp_dic = agent.explain_diagnosis()
         l=[]
-        for key in exp_dic:
-            l.append(exp_dic[key])
+        # for key in exp_dic:
+        #     l.append(exp_dic[key])
         # Ruta al archivo PNG en la carpeta `static`
         plot_url = '/src/death_patient.png'
 
