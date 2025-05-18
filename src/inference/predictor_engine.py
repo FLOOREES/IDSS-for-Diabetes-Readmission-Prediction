@@ -6,6 +6,7 @@ import logging
 import os
 import json # For loading OHE feature names
 from typing import Dict, Any, List, Optional
+from functools import partial
 
 # --- Your Project's Modules ---
 # We'll need to import your main config. Let's assume it can be imported as AppConfig
@@ -166,7 +167,10 @@ class SinglePatientPredictorEngine:
         
         # Use pad_collate_fn to create a batch of size 1
         # pad_collate_fn expects a list of such items
-        collated_batch = pad_collate_fn([dataset_like_item]) 
+        max_len_for_padding = getattr(self.cfg, 'MAX_SEQ_LENGTH', None)
+        collate_fn_with_config = partial(pad_collate_fn, enforced_max_len=max_len_for_padding)
+
+        collated_batch = collate_fn_with_config([dataset_like_item]) 
         logger.debug("Patient data collated into a batch of size 1.")
         return collated_batch
 

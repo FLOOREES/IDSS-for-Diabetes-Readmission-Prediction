@@ -7,6 +7,7 @@ from src.data_preparation.datasets import PatientSequenceDataset # For backgroun
 from src.data_preparation.collators import pad_collate_fn      # For background data
 from torch.utils.data import DataLoader                       # For background data
 import logging
+from functools import partial # For partial function application
 
 logger = logging.getLogger(__name__)
 
@@ -90,10 +91,13 @@ def prepare_shap_background_data(engine: SinglePatientPredictorEngine,
     # 3. Create a Dataset and a single DataLoader to get one consistently padded batch
     # This ensures all sequences in background_collated_batch are padded to the same length (max_len within this combined set)
     background_dataset = PatientSequenceDataset(bg_feature_sequences_sample, bg_target_sequences_sample, bg_pids_sample)
+
+    max_len_for_padding = getattr(engine.cfg, 'MAX_SEQ_LENGTH', None)
+    collate_fn_with_config = partial(pad_collate_fn, enforced_max_len=max_len_for_padding)
     
     # Batch size = len(dataset) to process all as one batch for consistent padding
     background_dataloader = DataLoader(background_dataset, batch_size=len(background_dataset), 
-                                       shuffle=False, collate_fn=pad_collate_fn) 
+                                       shuffle=False, collate_fn=collate_fn_with_config ) 
     background_collated_batch_cpu = next(iter(background_dataloader))
 
     # 4. Get the encoder_input_tensor for this entire background batch
@@ -117,4 +121,5 @@ class RNNWrapperForSHAP(nn.Module): # This wrapper is good as is.
     def forward(self, encoder_input_tensor: torch.Tensor) -> torch.Tensor:
         rnn_outputs, _ = self.encoder_rnn_module(encoder_input_tensor) 
         logits = self.prediction_head(rnn_outputs)
-        return logits
+        summed_logits = torch.sum(logits, dim=1)
+        return summed_logits
