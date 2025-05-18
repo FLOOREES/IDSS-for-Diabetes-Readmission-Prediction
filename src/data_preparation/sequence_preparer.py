@@ -21,7 +21,7 @@ class SequenceDataPreparer:
         timestamp_col: str,
         target_col: str,
         numerical_features: List[str],
-        ohe_feature_prefixes: List[str],
+        ohe_columns: List[str],
         learned_emb_cols: Dict[str, int], # Col name -> vocab size
         precomputed_emb_cols: List[str],
         max_seq_length: Optional[int] = None,
@@ -35,7 +35,7 @@ class SequenceDataPreparer:
         self.timestamp_col = timestamp_col
         self.target_col = target_col
         self.numerical_features = numerical_features
-        self.ohe_feature_prefixes = ohe_feature_prefixes
+        self.actual_ohe_columns = ohe_columns
         self.learned_emb_cols = learned_emb_cols
         self.precomputed_emb_cols = precomputed_emb_cols
         self.max_seq_length = max_seq_length
@@ -43,21 +43,10 @@ class SequenceDataPreparer:
         self.logger = logger or logging.getLogger(__name__)
         self.scaler: Optional[StandardScaler] = None
         self.fitted = False
-        self._ohe_features_actual: List[str] = [] # Determined after seeing data
 
         self.logger.info(f"SequenceDataPreparer initialized. Max length: {self.max_seq_length or 'Dynamic'}")
         if self.scaler_path and os.path.exists(self.scaler_path):
             self._load_scaler()
-
-    def _identify_ohe_features(self, df: pd.DataFrame):
-        """Dynamically identifies OHE columns based on prefixes."""
-        self._ohe_features_actual = []
-        for prefix in self.ohe_feature_prefixes:
-            cols = [col for col in df.columns if col.startswith(prefix + '_')]
-            if not cols:
-                self.logger.warning(f"No columns found with prefix '{prefix}_'.")
-            self._ohe_features_actual.extend(cols)
-        self.logger.info(f"Identified {len(self._ohe_features_actual)} OHE columns.")
 
     def _validate_columns(self, df: pd.DataFrame):
         """Checks if all required feature columns exist in the DataFrame."""
@@ -66,7 +55,7 @@ class SequenceDataPreparer:
             self.numerical_features +
             list(self.learned_emb_cols.keys()) +
             self.precomputed_emb_cols +
-            self._ohe_features_actual # Use actual OHE cols identified
+            self.actual_ohe_columns
         )
         missing = [col for col in required_cols if col not in df.columns]
         if missing:
@@ -135,8 +124,6 @@ class SequenceDataPreparer:
         """
         if not self.fitted:
             raise RuntimeError("Scaler has not been fitted. Call fit_scaler() on training data first.")
-        if not self._ohe_features_actual:
-            self._identify_ohe_features(df) # Identify OHE columns if not done yet
 
         self.logger.info(f"Transforming DataFrame ({len(df)} rows) into sequences.")
         self._validate_columns(df) # Validate after identifying OHE cols
@@ -155,7 +142,7 @@ class SequenceDataPreparer:
 
         # --- Prepare for Grouping ---
         # Combine numerical and OHE features for easier access per row
-        num_ohe_cols = self.numerical_features + self._ohe_features_actual
+        num_ohe_cols = self.numerical_features + self.actual_ohe_columns
         learned_cols = list(self.learned_emb_cols.keys())
         precomputed_cols = self.precomputed_emb_cols
 

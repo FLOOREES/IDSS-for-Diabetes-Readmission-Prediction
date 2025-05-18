@@ -15,7 +15,7 @@ import os
 import json # For saving metrics
 from pathlib import Path # Using Path for consistency
 
-from typing import Tuple, Dict, Any, Optional
+from typing import Tuple, Dict, Any, Optional, List
 from torch.utils.data import DataLoader
 
 # Project imports (ensure these paths are correct relative to your project structure)
@@ -70,18 +70,28 @@ class Pipeline:
 
         df_final = self._run_preprocessing_and_load()
         df_train, df_val, df_test = self._split_data(df_final)
-        
+
+        actual_ohe_columns_list: Optional[List[str]] = None
+        if os.path.exists(self.cfg.PHASE1_OHE_FEATURE_NAMES_PATH):
+            logger.info(f"Loading OHE feature names from {self.cfg.PHASE1_OHE_FEATURE_NAMES_PATH}")
+            try:
+                with open(self.cfg.PHASE1_OHE_FEATURE_NAMES_PATH, 'r') as f:
+                    actual_ohe_columns_list = json.load(f)
+            except Exception as e:
+                logger.error(f"Failed to load OHE feature names from {self.cfg.PHASE1_OHE_FEATURE_NAMES_PATH}: {e}", exc_info=True)
+                actual_ohe_columns_list = None # Fallback or raise error
+
         self.data_preparer = SequenceDataPreparer(
             patient_id_col=self.cfg.PATIENT_ID_COL, timestamp_col=self.cfg.ENCOUNTER_ID_COL,
             target_col=self.cfg.TARGET_COL, numerical_features=self.cfg.NUMERICAL_FEATURES,
-            ohe_feature_prefixes=self.cfg.OHE_FEATURES_PREFIX, learned_emb_cols=self.cfg.LEARNED_EMB_COLS,
+            ohe_columns=actual_ohe_columns_list, learned_emb_cols=self.cfg.LEARNED_EMB_COLS,
             precomputed_emb_cols=self.cfg.PRECOMPUTED_EMB_COLS, max_seq_length=self.cfg.MAX_SEQ_LENGTH,
-            scaler_path=self.cfg.SCALER_PATH
+            scaler_path=self.cfg.SCALER_PATH, logger=logger
         )
         
         train_loader, val_loader = self._prepare_dataloaders(self.data_preparer, df_train, df_val, self.cfg.AE_BATCH_SIZE)
         
-        if not train_loader.dataset: # type: ignore
+        if not train_loader.dataset:
             logger.error("Training dataset is empty. Cannot proceed.")
             raise ValueError("Training dataset is empty, cannot get sample batch or train.")
         self.sample_batch_for_build = next(iter(train_loader))

@@ -110,10 +110,6 @@ NUMERICAL_FEATURES = [
     'age' # CRITICAL FIX: Reverted from 'age_ordinal' to 'age'
 ]
 
-OHE_FEATURES_PREFIX = [
-    'gender', 'admission_type_id', 'race'
-]
-
 LEARNED_EMB_COLS = {
     # CRITICAL FIX: Reverted keys from 'xxx_label' to original names
     'discharge_disposition_id': 26,
