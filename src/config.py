@@ -142,6 +142,7 @@ DIAGNOSIS_TSNE_COMPONENTS = 16# Name used by getattr in pipeline for SecondPhase
 OTHER_EMBEDDING_DIM = 10
 FINETUNE_DIAG_EMBEDDINGS = True
 NUM_CLASSES = 3
+MODEL_INPUT_NUM_OHE_DIM = 26
 
 # ==============================================================================
 # 7. TRAINING HYPERPARAMETERS

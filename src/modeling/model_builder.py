@@ -3,13 +3,12 @@ from .embeddings import EmbeddingManager
 from .encoder import EncoderRNN
 from .decoder import DecoderRNN
 from .autoencoder import Seq2SeqAE 
-from typing import Dict
 
 from src.config import (HIDDEN_DIM, NUM_RNN_LAYERS, DROPOUT, USE_GRU, USE_ATTENTION, ATTENTION_DIM, 
-    OTHER_EMBEDDING_DIM, LEARNED_EMB_COLS, PRECOMPUTED_EMB_COLS, DIAG_EMBEDDINGS_PATH, FINETUNE_DIAG_EMBEDDINGS,)
+    OTHER_EMBEDDING_DIM, LEARNED_EMB_COLS, PRECOMPUTED_EMB_COLS, DIAG_EMBEDDINGS_PATH, FINETUNE_DIAG_EMBEDDINGS, MODEL_INPUT_NUM_OHE_DIM)
 
 
-def build_autoencoder_from_config(sample_batch: Dict, logger, device) -> Seq2SeqAE:
+def build_autoencoder_from_config(logger, device) -> Seq2SeqAE:
     """ Helper function to instantiate the AE model based on config. """
     logger.info("Building AE model architecture from config...")
     # Define Embedding Manager Config
@@ -23,7 +22,7 @@ def build_autoencoder_from_config(sample_batch: Dict, logger, device) -> Seq2Seq
     }
     embedding_manager = EmbeddingManager(learned_emb_config, precomputed_emb_config, device)
     total_emb_dim = embedding_manager.get_total_embedding_dim()
-    num_ohe_features = sample_batch['num_ohe'].shape[-1]
+    num_ohe_features = MODEL_INPUT_NUM_OHE_DIM
     logger.info(f"Determined Num OHE Features for build: {num_ohe_features}")
     encoder_input_dim = num_ohe_features + total_emb_dim
 

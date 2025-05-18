@@ -61,7 +61,6 @@ class Pipeline:
 
         # Attributes to store intermediate results/objects
         self.data_preparer: Optional[SequenceDataPreparer] = None
-        self.sample_batch_for_build: Optional[Dict[str, Any]] = None
 
 
     def run(self) -> None:
@@ -94,10 +93,9 @@ class Pipeline:
         if not train_loader.dataset:
             logger.error("Training dataset is empty. Cannot proceed.")
             raise ValueError("Training dataset is empty, cannot get sample batch or train.")
-        self.sample_batch_for_build = next(iter(train_loader))
 
-        trained_ae = self._train_or_load_autoencoder(train_loader, val_loader, self.sample_batch_for_build)
-        trained_predictor = self._train_or_load_predictor(trained_ae, train_loader, val_loader, self.sample_batch_for_build)
+        trained_ae = self._train_or_load_autoencoder(train_loader, val_loader)
+        trained_predictor = self._train_or_load_predictor(trained_ae, train_loader, val_loader)
 
         self._run_outlier_detection(trained_ae, df_train, df_val, self.data_preparer)
         self._run_prediction(trained_predictor, df_test, self.data_preparer)
@@ -282,11 +280,11 @@ class Pipeline:
         logger.info("Train and Validation DataLoaders created.")
         return train_loader, val_loader
 
-    def _train_or_load_autoencoder(self, train_loader: DataLoader, val_loader: DataLoader, sample_batch: Dict) -> Seq2SeqAE:
+    def _train_or_load_autoencoder(self, train_loader: DataLoader, val_loader: DataLoader) -> Seq2SeqAE:
         """Trains or loads the autoencoder model."""
         if self.cfg.TRAIN_AE:
             logger.info("--- Training Autoencoder ---")
-            autoencoder = build_autoencoder_from_config(sample_batch, logger, self.device) 
+            autoencoder = build_autoencoder_from_config(logger, self.device) 
             ae_trainer = AETrainer(
                 model=autoencoder, train_loader=train_loader, val_loader=val_loader,
                 optimizer_name=self.cfg.AE_OPTIMIZER, optimizer_params={'lr': self.cfg.AE_LEARNING_RATE, 'weight_decay': self.cfg.AE_WEIGHT_DECAY},
@@ -303,7 +301,7 @@ class Pipeline:
             logger.info(f"--- Loading Pre-trained Autoencoder from {self.cfg.AE_MODEL_LOAD_PATH} ---")
             if not os.path.exists(self.cfg.AE_MODEL_LOAD_PATH):
                 raise FileNotFoundError(f"AE model checkpoint not found: {self.cfg.AE_MODEL_LOAD_PATH}")
-            autoencoder = build_autoencoder_from_config(sample_batch, logger, self.device) 
+            autoencoder = build_autoencoder_from_config(logger, self.device) 
             checkpoint = load_artifact(self.cfg.AE_MODEL_LOAD_PATH, device=self.device)
             if 'model_state_dict' not in checkpoint: raise KeyError("Checkpoint missing 'model_state_dict'.")
             autoencoder.load_state_dict(checkpoint['model_state_dict'])
@@ -311,7 +309,7 @@ class Pipeline:
             logger.info("Pre-trained Autoencoder loaded.")
             return autoencoder
 
-    def _train_or_load_predictor(self, trained_ae: Seq2SeqAE, train_loader: DataLoader, val_loader: DataLoader, sample_batch: Dict) -> PredictorModel:
+    def _train_or_load_predictor(self, trained_ae: Seq2SeqAE, train_loader: DataLoader, val_loader: DataLoader) -> PredictorModel:
         """Trains or loads the predictor model."""
         if self.cfg.TRAIN_PREDICTOR:
             logger.info("--- Training Predictor ---")
@@ -343,7 +341,7 @@ class Pipeline:
             if not os.path.exists(self.cfg.PREDICTOR_MODEL_LOAD_PATH):
                 raise FileNotFoundError(f"Predictor model checkpoint not found: {self.cfg.PREDICTOR_MODEL_LOAD_PATH}")
 
-            temp_ae = build_autoencoder_from_config(sample_batch, logger, self.device) 
+            temp_ae = build_autoencoder_from_config(logger, self.device) 
             encoder = temp_ae.get_encoder()
             num_classes = getattr(self.cfg, 'NUM_CLASSES', 3)
             prediction_head = PredictionHead(input_dim=self.cfg.HIDDEN_DIM, output_dim=num_classes)
