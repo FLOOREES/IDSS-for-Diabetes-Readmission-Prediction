@@ -1087,8 +1087,9 @@ document.querySelectorAll('.btn-med').forEach(button => {
         let allValid = true;
         ['diag1Input', 'diag2Input', 'diag3Input'].forEach(inputId => {
             const input = document.getElementById(inputId);
+            console.log(`Validando ${inputId}: ${input.value}`);
             // Si el campo no está vacío, debe coincidir con el valor seleccionado
-            if (input.value && input.value !== input.dataset.selected) {
+            if (input.value && input.value !== input.dataset.selected && input.value !== '') {
                 allValid = false;
             }
         });
