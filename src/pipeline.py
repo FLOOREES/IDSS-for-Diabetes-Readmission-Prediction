@@ -211,33 +211,47 @@ class Pipeline:
         if self.cfg.PATIENT_ID_COL not in df.columns:
             raise ValueError(f"Patient ID column '{self.cfg.PATIENT_ID_COL}' not found.")
 
-        patient_groups = df[self.cfg.PATIENT_ID_COL]
-        all_indices = np.arange(len(df))
+        patient_groups = df[self.cfg.PATIENT_ID_COL] # Groups for splitting (ensures patient integrity)
+        all_indices = np.arange(len(df)) # Indices to be split
 
+        # First, split into (train + validation) and test sets
         gss_test = GroupShuffleSplit(n_splits=1, test_size=self.cfg.TEST_SPLIT_SIZE, random_state=self.cfg.RANDOM_SEED)
         train_val_idx_pos, test_idx_pos = next(gss_test.split(all_indices, groups=patient_groups))
-        df_test = df.iloc[test_idx_pos].copy()
-        df_train_val = df.iloc[train_val_idx_pos].copy()
+        
+        df_test = df.iloc[test_idx_pos].copy()       # Create test DataFrame
+        df_train_val = df.iloc[train_val_idx_pos].copy() # Create combined train/validation DataFrame
 
+        # Now, split (train + validation) into train and validation sets
+        # Adjust validation proportion because it's now a fraction of df_train_val, not the original df
         val_proportion_adjusted = self.cfg.VALIDATION_SPLIT_SIZE / (1 - self.cfg.TEST_SPLIT_SIZE)
         gss_val = GroupShuffleSplit(n_splits=1, test_size=val_proportion_adjusted, random_state=self.cfg.RANDOM_SEED)
-        train_val_patient_groups = df_train_val[self.cfg.PATIENT_ID_COL]
-        train_val_indices_pos = np.arange(len(df_train_val))
+        
+        train_val_patient_groups = df_train_val[self.cfg.PATIENT_ID_COL] # Groups from the df_train_val set
+        train_val_indices_pos = np.arange(len(df_train_val)) # Indices for df_train_val
+
         train_idx_pos, val_idx_pos = next(gss_val.split(train_val_indices_pos, groups=train_val_patient_groups))
-        df_train = df_train_val.iloc[train_idx_pos].copy()
-        df_val = df_train_val.iloc[val_idx_pos].copy()
+        
+        df_train = df_train_val.iloc[train_idx_pos].copy() # Create train DataFrame
+        df_val = df_train_val.iloc[val_idx_pos].copy()     # Create validation DataFrame
 
         logger.info(f"Train: {len(df_train)} ({df_train[self.cfg.PATIENT_ID_COL].nunique()} patients), "
                     f"Val: {len(df_val)} ({df_val[self.cfg.PATIENT_ID_COL].nunique()} patients), "
                     f"Test: {len(df_test)} ({df_test[self.cfg.PATIENT_ID_COL].nunique()} patients)")
         
+        # Critical check for patient overlap between sets
         train_pats = set(df_train[self.cfg.PATIENT_ID_COL].unique())
         val_pats = set(df_val[self.cfg.PATIENT_ID_COL].unique())
         test_pats = set(df_test[self.cfg.PATIENT_ID_COL].unique())
-        if not (train_pats.isdisjoint(val_pats) and train_pats.isdisjoint(test_pats) and val_pats.isdisjoint(test_pats)):
+        
+        if not (train_pats.isdisjoint(val_pats) and \
+                train_pats.isdisjoint(test_pats) and \
+                val_pats.isdisjoint(test_pats)):
             logger.error("Patient overlap detected between splits! This is a critical issue.")
+            # Consider raising an exception here if this is a hard stop condition:
+            # raise ValueError("Patient overlap detected between splits! Critical data integrity issue.")
         else:
-            logger.info("Patient overlap check passed.")
+            logger.info("Patient overlap check passed. Splits are clean.")
+            
         return df_train, df_val, df_test
 
     def _prepare_dataloaders(self, data_preparer: SequenceDataPreparer, df_train: pd.DataFrame, df_val: pd.DataFrame, batch_size: int) -> Tuple[DataLoader, DataLoader]:
