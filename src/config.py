@@ -40,6 +40,12 @@ AE_MODEL_LOAD_PATH = os.path.join(MODELS_DIR, "autoencoder_best.pth")
 PREDICTOR_MODEL_LOAD_PATH = os.path.join(MODELS_DIR, "predictor_best.pth")
 LOG_FILE = os.path.join(LOGS_DIR, "workflow.log")
 
+# --- Preprocessing Phase 1 Artifacts ---
+PHASE1_ARTIFACTS_DIR = os.path.join(MODELS_DIR, "phase1_preprocessor") # A directory for these
+PHASE1_OHE_ENCODER_PATH = os.path.join(PHASE1_ARTIFACTS_DIR, "ohe_encoder.joblib")
+PHASE1_OHE_FEATURE_NAMES_PATH = os.path.join(PHASE1_ARTIFACTS_DIR, "ohe_feature_names.json")
+PHASE1_LOW_VAR_COLS_PATH = os.path.join(PHASE1_ARTIFACTS_DIR, "low_variance_cols.json")
+
 # ==============================================================================
 # 3. PREPROCESSING DIRECTIVES & COLUMN DEFINITIONS
 # ==============================================================================

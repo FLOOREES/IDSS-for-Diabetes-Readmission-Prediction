@@ -99,10 +99,9 @@ class Pipeline:
         Handles preprocessing if the final encoded data file does not exist.
         Otherwise, loads the existing file. Also ensures critical ID columns are present.
         """
-        logger.info("--- Stage: Preprocessing and Data Loading ---")
+        logger.info("--- Stage: Preprocessing and Data Loading ---") # Using the module-level logger from pipeline.py
         final_data_path = Path(self.cfg.FINAL_ENCODED_DATA_PATH)
         
-        # Determine if preprocessing needs to run: only if the output file doesn't exist.
         should_run_preprocessing = not final_data_path.exists()
 
         if should_run_preprocessing:
@@ -112,10 +111,23 @@ class Pipeline:
             logger.info("Running Phase 1 Preprocessing...")
             df_raw = FirstPhasePreprocessor.load_data(self.cfg.RAW_DATA_PATH, self.cfg.MISSING_VALUES)
             phase1_processor = FirstPhasePreprocessor(
-                drop_columns=self.cfg.DROP_COLUMNS, one_hot_columns=self.cfg.ONE_HOT_COLUMNS,
-                ordinal_mappings=self.cfg.ORDINAL_MAPPINGS, treatment_columns=self.cfg.TREATMENT_COLUMNS,
-                treatment_mapping=self.cfg.TREATMENT_MAPPING, missing_values_encoding=self.cfg.MISSING_VALUES
+                drop_columns=self.cfg.DROP_COLUMNS,
+                one_hot_columns=self.cfg.ONE_HOT_COLUMNS, # config.ONE_HOT_COLUMNS should be e.g. ['gender', 'admission_type_id']
+                                                          # 'race' is handled internally by the preprocessor's OHE logic now after imputation
+                ordinal_mappings=self.cfg.ORDINAL_MAPPINGS,
+                treatment_columns=self.cfg.TREATMENT_COLUMNS,
+                treatment_mapping=self.cfg.TREATMENT_MAPPING,
+                missing_values_encoding=self.cfg.MISSING_VALUES, # This is {'?': pd.NA} for df.replace()
+                
+                # New paths for saved artifacts from config.py
+                ohe_encoder_path=self.cfg.PHASE1_OHE_ENCODER_PATH,
+                ohe_feature_names_path=self.cfg.PHASE1_OHE_FEATURE_NAMES_PATH,
+                low_variance_cols_path=self.cfg.PHASE1_LOW_VAR_COLS_PATH,
+                logger=logger # Pass the pipeline's logger (or a child logger)
             )
+            
+            # The transform method will now internally handle fitting and saving 
+            # its components if they haven't been loaded and artifacts don't exist.
             df_phase1 = phase1_processor.transform(df_raw.copy())
             logger.info(f"Phase 1 complete. Shape: {df_phase1.shape}")
 
@@ -129,22 +141,16 @@ class Pipeline:
                 icd9_chapters_path=self.cfg.ICD9_CHAPTERS_PATH,
                 spacy_model_name=self.cfg.SPACY_MODEL_NAME,
                 label_encode_columns=self.cfg.LABEL_ENCODING,
-                embedding_dim=getattr(self.cfg, 'DIAGNOSIS_EMBEDDING_DIM', 8), 
-                tsne_n_components=getattr(self.cfg, 'DIAGNOSIS_TSNE_COMPONENTS', 8)
+                embedding_dim=getattr(self.cfg, 'DIAGNOSIS_EMBEDDING_DIM', 16), 
             )
             final_data_path.parent.mkdir(parents=True, exist_ok=True)
-            # Assuming phase2_processor saves to FINAL_ENCODED_DATA_PATH.
-            # Your original main_workflow used NO_MISSINGS_ENCODED_PATH here. If that's intended as the
-            # direct output of phase2 and FINAL_ENCODED_DATA_PATH is something else (e.g. a copy or points to it),
-            # ensure this is correctly handled. For this code, I assume phase2 saves to final_data_path.
             df_processed = phase2_processor.transform(df_phase1.copy(), output_path=str(final_data_path))
             logger.info(f"Preprocessing complete. Data saved to: {final_data_path}. Shape: {df_processed.shape}")
         else: # Data exists
-             logger.info(f"Using existing preprocessed data from: {final_data_path}")
+            logger.info(f"Using existing preprocessed data from: {final_data_path}")
 
         # --- Load (or use already loaded) final data ---
         try:
-            # If preprocessing was run, df_processed holds the data. Otherwise, load it.
             if 'df_processed' in locals() and should_run_preprocessing:
                 df_final = df_processed
             else:
@@ -155,11 +161,9 @@ class Pipeline:
             raise
 
         # --- Critical ID Check & Merge (Safety Net) ---
-        # Ensure your config has RAW_ENCOUNTER_ID_COL and RAW_PATIENT_ID_COL 
-        # (these are the names in the raw CSV file)
-        # and ENCOUNTER_ID_COL, PATIENT_ID_COL (standardized names used in pipeline)
-        raw_encounter_col = getattr(self.cfg, 'RAW_ENCOUNTER_ID_COL_IN_RAW_FILE', 'encounter_id') # Example raw name
-        raw_patient_col = getattr(self.cfg, 'RAW_PATIENT_ID_COL_IN_RAW_FILE', 'patient_nbr')   # Example raw name
+        # This part remains unchanged
+        raw_encounter_col = getattr(self.cfg, 'RAW_ENCOUNTER_ID_COL_IN_RAW_FILE', 'encounter_id')
+        raw_patient_col = getattr(self.cfg, 'RAW_PATIENT_ID_COL_IN_RAW_FILE', 'patient_nbr')
 
         if self.cfg.PATIENT_ID_COL not in df_final.columns or \
            self.cfg.ENCOUNTER_ID_COL not in df_final.columns:
@@ -172,20 +176,27 @@ class Pipeline:
                     self.cfg.RAW_DATA_PATH,
                     usecols=[raw_encounter_col, raw_patient_col] 
                 )
-                # Rename raw columns to the standardized names used throughout the pipeline
                 df_raw_ids.rename(columns={
                     raw_encounter_col: self.cfg.ENCOUNTER_ID_COL,
                     raw_patient_col: self.cfg.PATIENT_ID_COL
                 }, inplace=True)
 
-                df_final = df_final.reset_index(drop=True)
+                df_final = df_final.reset_index(drop=True) 
                 df_raw_ids = df_raw_ids.reset_index(drop=True)
 
-                if self.cfg.ENCOUNTER_ID_COL not in df_final.columns:
-                    df_final[self.cfg.ENCOUNTER_ID_COL] = df_raw_ids[self.cfg.ENCOUNTER_ID_COL]
-                if self.cfg.PATIENT_ID_COL not in df_final.columns:
-                    df_final[self.cfg.PATIENT_ID_COL] = df_raw_ids[self.cfg.PATIENT_ID_COL]
-                logger.info("IDs merged back into the DataFrame.")
+                # Ensure the lengths match for simple assignment, or use a merge
+                if len(df_final) == len(df_raw_ids):
+                    if self.cfg.ENCOUNTER_ID_COL not in df_final.columns:
+                        df_final[self.cfg.ENCOUNTER_ID_COL] = df_raw_ids[self.cfg.ENCOUNTER_ID_COL]
+                    if self.cfg.PATIENT_ID_COL not in df_final.columns:
+                        df_final[self.cfg.PATIENT_ID_COL] = df_raw_ids[self.cfg.PATIENT_ID_COL]
+                    logger.info("IDs assigned back into the DataFrame based on index alignment.")
+                else:
+                    logger.warning(f"Length mismatch between df_final ({len(df_final)}) and df_raw_ids ({len(df_raw_ids)}). Cannot directly assign IDs. Fallback merge might be needed if IDs are still missing.")
+                    # As a more robust fallback, you could consider a merge if index alignment isn't guaranteed
+                    # For now, we'll rely on the original logic, but this is a potential point of failure if df_final was modified in ways that broke row order.
+                    # However, since df_final is either loaded from CSV or the direct output of phase2, row order from df_raw should be preserved.
+                    
             except Exception as e:
                 logger.error(f"Failed to merge missing IDs from raw data: {e}. This might impact downstream tasks.", exc_info=True)
                 raise ValueError("Critical ID columns missing and could not be merged.") from e
