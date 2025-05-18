@@ -273,9 +273,12 @@ class FirstPhasePreprocessor:
         # For pd.read_csv, na_values should be the actual string markers like ['?']
         actual_na_values_for_read_csv = list(na_values.keys()) if isinstance(na_values, dict) else na_values
 
+        diag_cols_to_read_as_str = ['diag_1', 'diag_2', 'diag_3'] 
+        col_dtypes = {col: str for col in diag_cols_to_read_as_str}
+
         logger.info(f"Loading data: {path} with na_values={actual_na_values_for_read_csv}")
         try:
-            df = pd.read_csv(path, na_values=actual_na_values_for_read_csv)
+            df = pd.read_csv(path, na_values=actual_na_values_for_read_csv, dtype=col_dtypes)
             logger.info(f"Data loaded. Shape: {df.shape}")
             # Logging of initial missing counts based on read_csv's interpretation of na_values
             if 'race' in df.columns:

@@ -91,7 +91,7 @@ class SinglePatientPredictorEngine:
             timestamp_col=self.cfg.ENCOUNTER_ID_COL,
             target_col=self.cfg.TARGET_COL, # Target col might not be in inference data, handled in _prepare_model_input
             numerical_features=self.cfg.NUMERICAL_FEATURES,
-            actual_ohe_columns=actual_ohe_columns_list, # Loaded list
+            ohe_columns=actual_ohe_columns_list,
             learned_emb_cols=self.cfg.LEARNED_EMB_COLS,
             precomputed_emb_cols=self.cfg.PRECOMPUTED_EMB_COLS,
             max_seq_length=self.cfg.MAX_SEQ_LENGTH,
