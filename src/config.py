@@ -1,27 +1,67 @@
+# src/config.py
+"""
+Configuration file for the Diabetes Readmission Project.
+All paths, hyperparameters, and constants are defined here.
+"""
+import os
 import pandas as pd
 
-RAW_DATA_PATH = "data/diabetic_data.csv"
-MID_PROCESSING_PATH = "data/diabetic_data_mid.csv"
-NO_MISSINGS_ENCODED_PATH="data/diabetic_data_no_na_diag.csv"
-FINAL_ENCODED_DATA_PATH="data/diabetic_data_no_na_diag.csv"
+# ==============================================================================
+# 1. DIRECTORY PATHS
+# ==============================================================================
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-DIAG_EMBEDDINGS_PATH = "data/diag_embeddings.npy"
-DIAG_LABEL_ENCODER_PATH = "data/diag_label_encoder.json"
-LABEL_ENCODERS_PATH = "data/diabetic_data_label_encoders.json"
-ICD9_HIERARCHY_PATH = "data/icd9Hierarchy.json"
-ICD9_CHAPTERS_PATH = "data/icd9Chapters.json"
+DATA_DIR = os.path.join(BASE_DIR, "data")
+LOGS_DIR = os.path.join(BASE_DIR, "logs")
+MODELS_DIR = os.path.join(BASE_DIR, "models")
+RESULTS_DIR = os.path.join(BASE_DIR, "results")
+
+for dir_path in [DATA_DIR, LOGS_DIR, MODELS_DIR, RESULTS_DIR]:
+    os.makedirs(dir_path, exist_ok=True)
+
+# ==============================================================================
+# 2. DATA FILE PATHS & NAMES
+# ==============================================================================
+RAW_DATA_PATH = os.path.join(DATA_DIR, "diabetic_data.csv")
+# MID_PROCESSING_PATH = os.path.join(DATA_DIR, "diabetic_data_mid.csv") # Potentially unused by current pipeline.py
+FINAL_ENCODED_DATA_PATH = os.path.join(DATA_DIR, "diabetic_data_no_na_diag.csv")
+
+DIAG_EMBEDDINGS_PATH = os.path.join(DATA_DIR, "diag_embeddings.npy")
+DIAG_LABEL_ENCODER_PATH = os.path.join(DATA_DIR, "diag_label_encoder.json")
+LABEL_ENCODERS_PATH = os.path.join(DATA_DIR, "diabetic_data_label_encoders.json")
+ICD9_HIERARCHY_PATH = os.path.join(DATA_DIR, "icd9Hierarchy.json")
+ICD9_CHAPTERS_PATH = os.path.join(DATA_DIR, "icd9Chapters.json")
 SPACY_MODEL_NAME = "en_core_sci_md"
 
+SCALER_PATH = os.path.join(MODELS_DIR, "scaler.pkl")
+ISOLATION_FOREST_PATH = os.path.join(MODELS_DIR, "isolation_forest.pkl")
+
+AE_MODEL_LOAD_PATH = os.path.join(MODELS_DIR, "autoencoder_best.pth")
+PREDICTOR_MODEL_LOAD_PATH = os.path.join(MODELS_DIR, "predictor_best.pth")
+LOG_FILE = os.path.join(LOGS_DIR, "workflow.log")
+
+# ==============================================================================
+# 3. PREPROCESSING DIRECTIVES & COLUMN DEFINITIONS
+# ==============================================================================
 MISSING_VALUES = {'?': pd.NA}
 
 DROP_COLUMNS = [
-    'weight',
-    'payer_code', 'medical_specialty',
-    'max_glu_serum', 'A1Cresult', 'change', 'diabetesMed'
+    'weight', 'payer_code', 'medical_specialty',
+    'max_glu_serum', 'A1Cresult',
+    'change', 'diabetesMed' # These were in your original full config
 ]
 
+RAW_ENCOUNTER_ID_COL_IN_RAW_FILE = 'encounter_id'
+RAW_PATIENT_ID_COL_IN_RAW_FILE = 'patient_nbr'
+
+PATIENT_ID_COL = 'patient_nbr'
+ENCOUNTER_ID_COL = 'encounter_id'
+TARGET_COL = 'readmitted' # Name of the target column AFTER ordinal encoding
+
+DIAG_COLS = ['diag_1', 'diag_2', 'diag_3']
+
 ONE_HOT_COLUMNS = [
-    'gender', 'admission_type_id', 
+    'gender', 'admission_type_id', 'race'
 ]
 
 ORDINAL_MAPPINGS = {
@@ -35,150 +75,115 @@ ORDINAL_MAPPINGS = {
     }
 }
 
+TREATMENT_COLUMNS = [
+    'metformin', 'repaglinide', 'nateglinide', 'chlorpropamide', 'glimepiride',
+    'acetohexamide', 'glipizide', 'glyburide', 'tolbutamide', 'pioglitazone',
+    'rosiglitazone', 'acarbose', 'miglitol', 'troglitazone', 'tolazamide',
+    'examide', 'citoglipton', 'insulin', 'glyburide-metformin',
+    'glipizide-metformin', 'glimepiride-pioglitazone',
+    'metformin-rosiglitazone', 'metformin-pioglitazone'
+]
 TREATMENT_MAPPING = {
-    'No': 0,
-    'Down': 1,
-    'Steady': 2,
-    'Up': 3
+    'No': 0, 'Down': 1, 'Steady': 2, 'Up': 3
 }
 
-TREATMENT_COLUMNS = [
-    'metformin', 'repaglinide', 'nateglinide',
-    'chlorpropamide', 'glimepiride', 'acetohexamide', 'glipizide',
-    'glyburide', 'tolbutamide', 'pioglitazone', 'rosiglitazone',
-    'acarbose', 'miglitol', 'troglitazone', 'tolazamide', 'examide',
-    'citoglipton', 'insulin', 'glyburide-metformin', 'glipizide-metformin',
-    'glimepiride-pioglitazone', 'metformin-rosiglitazone',
-    'metformin-pioglitazone'
+LABEL_ENCODING = [
+    'discharge_disposition_id', 'admission_source_id'
 ]
 
-LABEL_ENCODING= ['discharge_disposition_id', 'admission_source_id']
+# ==============================================================================
+# 4. FEATURE DEFINITIONS FOR SequenceDataPreparer
+# ==============================================================================
+# These names MUST match the column names in the DataFrame AFTER all preprocessing
+# as expected by SequenceDataPreparer based on the original working config.
 
-# ----------------------------
+NUMERICAL_FEATURES = [
+    'time_in_hospital', 'num_lab_procedures', 'num_procedures',
+    'num_medications', 'number_outpatient', 'number_emergency',
+    'number_inpatient', 'number_diagnoses',
+    'age' # CRITICAL FIX: Reverted from 'age_ordinal' to 'age'
+]
 
-# src/config.py
-"""
-Central configuration file for the project.
-Define paths, hyperparameters, and feature lists here.
-"""
-import pandas as pd
-import os
+OHE_FEATURES_PREFIX = [
+    'gender', 'admission_type_id', 'race'
+]
 
-# --- Paths ---
-# Suggest using os.path.join for better cross-platform compatibility
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # Project root assuming src is top-level
-DATA_DIR = os.path.join(BASE_DIR, "data")
-LOGS_DIR = os.path.join(BASE_DIR, "logs")
-MODELS_DIR = os.path.join(BASE_DIR, "models")
-RESULTS_DIR = os.path.join(BASE_DIR, "results") # For saving results like predictions
-
-# Input Data
-RAW_DATA_PATH = os.path.join(DATA_DIR, "diabetic_data.csv")
-
-# Embeddings and Mappings
-DIAG_EMBEDDINGS_PATH = os.path.join(DATA_DIR, "diag_embeddings.npy")
-DIAG_MAPPING_PATH = os.path.join(DATA_DIR, "diag_mapping.json") # Renamed from label_encoder
-OTHER_MAPPINGS_PATH = os.path.join(DATA_DIR, "other_mappings.json") # Renamed from label_encoders
-ICD9_HIERARCHY_PATH = os.path.join(DATA_DIR, "icd9Hierarchy.json")
-ICD9_CHAPTERS_PATH = os.path.join(DATA_DIR, "icd9Chapters.json")
-
-# Model Artifacts
-AE_MODEL_PATH = os.path.join(MODELS_DIR, "autoencoder.pth")
-ENCODER_MODEL_PATH = os.path.join(MODELS_DIR, "encoder.pth") # Optionally save separately
-PREDICTOR_MODEL_PATH = os.path.join(MODELS_DIR, "predictor.pth")
-ISOLATION_FOREST_PATH = os.path.join(MODELS_DIR, "isolation_forest.pkl")
-SCALER_PATH = os.path.join(MODELS_DIR, "scaler.pkl") # Path to save the fitted scaler
-
-# Log file
-LOG_FILE = os.path.join(LOGS_DIR, "workflow.log")
-
-DIAG_COLS = ['diag_1', 'diag_2', 'diag_3'] # Columns for diagnosis embedding lookup
-
-# Embedding Dimensions
-DIAG_EMBEDDING_DIM = 16 # Dimension *after* t-SNE if used, else Spacy dim
-TSNE_N_COMPONENTS = 16 # Make consistent with DIAG_EMBEDDING_DIM if TSNE used
-OTHER_EMBEDDING_DIM = 10 # Example dimension for learned embeddings
-
-# --- Feature Definitions for Sequence Model ---
-# Define these based on the output columns AFTER preprocessing Phase 2
-# Important: These names must match columns in the final DataFrame fed to SequenceDataPreparer
-PATIENT_ID_COL = 'patient_nbr' # Use original ID if dropped during processing
-ENCOUNTER_ID_COL = 'encounter_id'
-TARGET_COL = 'readmitted' # The name of the target column AFTER potential encoding
-
-# Example feature lists (adjust based on actual columns post-preprocessing)
-NUMERICAL_FEATURES = ['time_in_hospital', 'num_lab_procedures', 'num_procedures', 'num_medications', 'number_outpatient', 'number_emergency', 'number_inpatient', 'number_diagnoses', 'age'] # Ensure 'age' is numerical here
-OHE_FEATURES_PREFIX = ['gender', 'admission_type_id', 'race'] # Prefixes from Phase 1 OHE
-
-# Categorical features needing LEARNED embeddings
 LEARNED_EMB_COLS = {
-    'discharge_disposition_id': 26, # Example Vocab Size (get from data)
-    'admission_source_id': 17       # Example Vocab Size
+    # CRITICAL FIX: Reverted keys from 'xxx_label' to original names
+    'discharge_disposition_id': 26,
+    'admission_source_id': 17
 }
 
-# Categorical features using PRE-COMPUTED embeddings (Diagnosis codes)
-PRECOMPUTED_EMB_COLS = DIAG_COLS # These use DIAG_MAPPING_PATH and DIAG_EMBEDDINGS_PATH
+# CRITICAL FIX: Reverted from using 'xxx_label' to using DIAG_COLS directly
+PRECOMPUTED_EMB_COLS = DIAG_COLS # ['diag_1', 'diag_2', 'diag_3']
 
-# --- Data Preparation Config ---
-MAX_SEQ_LENGTH = 50 # Max number of visits per patient sequence
+# ==============================================================================
+# 5. DATA PREPARATION & LOADER CONFIG
+# ==============================================================================
+MAX_SEQ_LENGTH = 50
+DATALOADER_NUM_WORKERS = 2
+DATALOADER_PIN_MEMORY = True
 
-# --- Model Hyperparameters ---
-# General
+
+# ==============================================================================
+# 6. MODEL ARCHITECTURE HYPERPARAMETERS
+# ==============================================================================
 HIDDEN_DIM = 128
-NUM_RNN_LAYERS = 1 # For Encoder and Decoder
+NUM_RNN_LAYERS = 1
 DROPOUT = 0.2
-USE_GRU = False # Use LSTM if False
+USE_GRU = False
 USE_ATTENTION = True
-ATTENTION_DIM = 64 # For Additive Attention mechanism
+ATTENTION_DIM = 64
 
-# Embeddings
-FINETUNE_DIAG_EMBEDDINGS = True # Whether to train pre-computed diag embeddings
+DIAGNOSIS_EMBEDDING_DIM = 16 # Name used by getattr in pipeline for SecondPhasePreprocessor
+DIAGNOSIS_TSNE_COMPONENTS = 16# Name used by getattr in pipeline for SecondPhasePreprocessor
+OTHER_EMBEDDING_DIM = 10
+FINETUNE_DIAG_EMBEDDINGS = True
+NUM_CLASSES = 3
 
-# --- Training Hyperparameters ---
-# AE Training
-AE_EPOCHS = 20 # Adjust based on convergence
+# ==============================================================================
+# 7. TRAINING HYPERPARAMETERS
+# ==============================================================================
+GRADIENT_CLIP_VALUE = 1.0
+
+AE_EPOCHS = 20
 AE_BATCH_SIZE = 64
 AE_LEARNING_RATE = 1e-3
 AE_WEIGHT_DECAY = 1e-6
-AE_OPTIMIZER = 'adam'
-AE_EARLY_STOPPING_PATIENCE = 5
+AE_OPTIMIZER = 'AdamW' # Was 'adam' in original full config, using 'AdamW' as it's often preferred
 AE_SCHEDULER_PATIENCE = 3
 AE_SCHEDULER_FACTOR = 0.1
+AE_EARLY_STOPPING_PATIENCE = 5
+AE_MODEL_CHECKPOINT_NAME = 'autoencoder_best.pth'
 
-# Predictor Training
 PREDICTOR_EPOCHS = 30
 PREDICTOR_BATCH_SIZE = 64
-PREDICTOR_LEARNING_RATE = 5e-4 # Often lower for fine-tuning
+PREDICTOR_LEARNING_RATE = 5e-4
 PREDICTOR_WEIGHT_DECAY = 1e-6
-PREDICTOR_OPTIMIZER = 'adam'
-PREDICTOR_EARLY_STOPPING_PATIENCE = 7
+PREDICTOR_OPTIMIZER = 'AdamW' # Was 'adam' in original full config
 PREDICTOR_SCHEDULER_PATIENCE = 4
 PREDICTOR_SCHEDULER_FACTOR = 0.2
-PREDICTOR_FINETUNE_ENCODER = True # Fine-tune encoder during prediction training?
+PREDICTOR_EARLY_STOPPING_PATIENCE = 7
+PREDICTOR_FINETUNE_ENCODER = True
+PREDICTOR_MODEL_CHECKPOINT_NAME = 'predictor_best.pth'
 
-# --- Analysis Config ---
-# Outlier Detection
-OUTLIER_MODE = 'visit' # 'visit' or 'patient'
-VISIT_ERROR_PERCENTILE = 98.0 # For visit-level outlier threshold
-# Isolation Forest parameters (if using patient mode)
+# ==============================================================================
+# 8. ANALYSIS & EVALUATION CONFIG
+# ==============================================================================
+OUTLIER_MODE = 'visit'
+VISIT_ERROR_PERCENTILE = 98.0
 IF_N_ESTIMATORS = 100
-IF_CONTAMINATION = 'auto' # Or a float like 0.05
+IF_CONTAMINATION = 'auto'
 
-# --- Runtime ---
-VALIDATION_SPLIT_SIZE = 0.15 # Fraction of patients for validation
-TEST_SPLIT_SIZE = 0.15 # Fraction of patients for testing (after train/val)
+# ==============================================================================
+# 9. DATA SPLITTING & RUNTIME SETTINGS
+# ==============================================================================
+VALIDATION_SPLIT_SIZE = 0.15
+TEST_SPLIT_SIZE = 0.15
 RANDOM_SEED = 42
 
-# Add checks for directory existence
-for dir_path in [DATA_DIR, LOGS_DIR, MODELS_DIR]:
-    os.makedirs(dir_path, exist_ok=True)
-
 # ==============================================================================
-# Workflow Control Flag
+# 10. WORKFLOW CONTROL FLAGS
 # ==============================================================================
-TRAIN_AE = False # <<< SET THIS TO False TO LOAD SAVED AE MODEL >>>
-TRAIN_PREDICTOR = False # Set to True to train Predictor, False to load pre-trained
-AE_MODEL_LOAD_PATH = os.path.join(MODELS_DIR, "autoencoder_best.pth") # Define load paths
-PREDICTOR_MODEL_LOAD_PATH = os.path.join(MODELS_DIR, "predictor_best.pth") # Define load paths
-# ==============================================================================
-
+TRAIN_AE = False
+TRAIN_PREDICTOR = False
