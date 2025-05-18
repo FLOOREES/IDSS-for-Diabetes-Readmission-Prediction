@@ -242,10 +242,10 @@ def create_app():
         }
         User = pd.DataFrame(user_data, index=[0])
         User.to_csv('uploads/latent_data.csv', index=False)
-
-        engine = SinglePatientPredictorEngine(AppConfig) # Pythonresult = 
-        preds = engine.predict_for_patient(User)
-        print(preds)
+        print(User)
+        # engine = SinglePatientPredictorEngine(AppConfig) # Pythonresult = 
+        # preds = engine.predict_for_patient(User)
+        # print(preds)
 
         # agent = MedicalAgent(db_path='uploads/latent_data.csv', documents_path='./documents',latent=True)
         # exp_dic = agent.explain_diagnosis()
@@ -253,7 +253,7 @@ def create_app():
         # for key in exp_dic:
         #     l.append(exp_dic[key])
         # Ruta al archivo PNG en la carpeta `static`
-        plot_url = '/src/death_patient.png'
+        plot_url = 'results/shap_explanations/patient_23043240_summary_bar.png'
 
         # Explicación de ejemplo
         explanation = l
