@@ -246,19 +246,22 @@ class FirstPhasePreprocessor:
 
     # --- Helper methods for transformations (largely unchanged, but ensure logging uses self.logger) ---
     def _load_data_handle_missings(self, df: pd.DataFrame) -> pd.DataFrame:
-        self.logger.info(f"Replacing missing value placeholders: {self.missing_values_encoding}")
-        df_replaced = df.replace(self.missing_values_encoding) # self.missing_values_encoding is {'?': pd.NA}
-        # Now df_replaced has pd.NA where '?' was.
+        """
+        Logs initial NA counts after pd.read_csv has converted placeholders.
+        The actual replacement of placeholders (e.g., '?') with NA objects
+        is expected to have been done by the static `load_data` method using
+        `pd.read_csv(na_values=...)`.
+        """
+        self.logger.info(f"Logging NA counts. Original missing placeholders like '{list(self.missing_values_encoding.keys())[0] if self.missing_values_encoding else 'N/A'}' should now be pd.NA/np.nan.")
         
-        # Log initial missing counts for 'race' and diagnosis columns *after* '?' replacement
-        if 'race' in df_replaced.columns:
-            missing_race_initial = df_replaced['race'].isnull().sum() # Checks for pd.NA
-            self.logger.info(f"Initial pd.NA count in 'race' (after '?' replacement): {missing_race_initial}")
+        if 'race' in df.columns:
+            missing_race_initial = df['race'].isnull().sum()
+            self.logger.info(f"Initial pd.NA/np.nan count in 'race': {missing_race_initial}")
         for col in ['diag_1', 'diag_2', 'diag_3']:
-            if col in df_replaced.columns:
-                missing_diag = df_replaced[col].isnull().sum() # Checks for pd.NA
-                self.logger.info(f"Initial pd.NA count in '{col}' (after '?' replacement): {missing_diag}")
-        return df_replaced
+            if col in df.columns:
+                missing_diag = df[col].isnull().sum()
+                self.logger.info(f"Initial pd.NA/np.nan count in '{col}': {missing_diag}")
+        return df # Return df unchanged by this specific method now
 
     @staticmethod
     def load_data(path: str, na_values: Union[List[str], Dict[str, List[str]]]) -> pd.DataFrame: # na_values usually just List[str] for read_csv
