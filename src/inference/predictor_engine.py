@@ -55,6 +55,7 @@ class SinglePatientPredictorEngine:
             raise RuntimeError("Critical: Failed to load fitted state for FirstPhasePreprocessor. Ensure artifacts exist.")
         logger.info("FirstPhasePreprocessor state loaded successfully.")
 
+
         # SecondPhasePreprocessor (it loads its artifacts internally based on path existence)
         self.phase2_processor = SecondPhasePreprocessor(
             diag_embeddings_path=self.cfg.DIAG_EMBEDDINGS_PATH,
@@ -85,6 +86,8 @@ class SinglePatientPredictorEngine:
             logger.info(f"OHE feature names list loaded successfully from {self.cfg.PHASE1_OHE_FEATURE_NAMES_PATH}")
         except Exception as e:
             raise RuntimeError(f"Critical: Failed to load or parse OHE feature names from {self.cfg.PHASE1_OHE_FEATURE_NAMES_PATH}: {e}")
+        
+        self.actual_ohe_columns_for_shap_naming: List[str] = actual_ohe_columns_list
 
 
         self.data_preparer = SequenceDataPreparer(

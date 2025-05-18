@@ -191,3 +191,7 @@ RANDOM_SEED = 42
 # ==============================================================================
 TRAIN_AE = False
 TRAIN_PREDICTOR = False
+
+LLM_MODEL_NAME = "gemini-2.0-flash"
+LLM_TEMPERATURE = 0.0
+RAG_NUM_DOCS_TO_RETRIEVE = 5
