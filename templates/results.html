@@ -2,8 +2,10 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Diagnosis Results</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked@latest/marked.min.js"></script>
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
@@ -17,12 +19,12 @@
             padding: 2rem;
             overflow-y: auto; /* Permite scroll en el contenido principal */
         }
-        .explanation-list {
-            list-style-type: disc;
-            padding-left: 1.5rem;
+        .explanation-content-area {
             margin-bottom: 2rem;
-            max-height: 60vh; /* Limita el alto de la lista */
+            max-height: 70vh; /* Limita el alto de la lista */
             overflow-y: auto; /* Scroll solo para la lista si es muy larga */
+            border: 1px solid #eee; /* Optional: to see its bounds */
+            padding: 1em; /* Add some padding inside the box */
         }
         .plot-container {
             text-align: center;
@@ -40,6 +42,66 @@
             margin-left: auto;
             margin-right: auto;
         }
+        /* Styles for HTML elements generated FROM Markdown */
+        .markdown-rendered h1, .markdown-rendered h2, .markdown-rendered h3 {
+            margin-top: 1.5em;
+            margin-bottom: 0.5em;
+            font-weight: bold;
+        }
+        .markdown-rendered h1 { font-size: 1.8em; }
+        .markdown-rendered h2 { font-size: 1.5em; }
+        .markdown-rendered h3 { font-size: 1.2em; }
+
+        .markdown-rendered p {
+            margin-bottom: 1em;
+            line-height: 1.6;
+        }
+        .markdown-rendered ul, .markdown-rendered ol {
+            list-style-position: outside;
+            padding-left: 2em;
+            margin-bottom: 1em;
+        }
+        .markdown-rendered li {
+            margin-bottom: 0.5em;
+        }
+        .markdown-rendered code { /* Inline code */
+            background-color: #f0f0f0;
+            padding: 0.2em 0.4em;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .markdown-rendered pre { /* Code blocks */
+            background-color: #f0f0f0;
+            padding: 1em;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin-bottom: 1em;
+        }
+        .markdown-rendered pre code { /* Code inside pre, reset some styles */
+            background-color: transparent;
+            padding: 0;
+            border-radius: 0;
+        }
+        .markdown-rendered blockquote {
+            border-left: 4px solid #ccc;
+            padding-left: 1em;
+            margin-left: 0;
+            margin-bottom: 1em;
+            color: #666;
+        }
+        .markdown-rendered table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1em;
+        }
+        .markdown-rendered th, .markdown-rendered td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        .markdown-rendered th {
+            background-color: #f9f9f9;
+        }
     </style>
 </head>
 <body>
@@ -51,13 +113,11 @@
     </header>
     <main class="container">
         <!-- Explanation list -->
-        <div class="explanation-container">
+        <div id="content" class="explanation-container">
             <h3>Diagnosis Explanation</h3>
-            <ul class="explanation-list">
-                {% for item in explanation %}
-                <li>{{ item }}</li>
-                {% endfor %}
-            </ul>
+            <div id="markdown-content" class="markdown-rendered">
+                {{ explanation | safe }}
+            </div>
         </div>
 
         <!-- Plot container -->
@@ -74,5 +134,38 @@
     </footer>
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+      <!-- <script>
+       document.addEventListener('DOMContentLoaded', function() {
+            // Configure marked options
+            // REMOVED `sanitize: true` as it's deprecated and likely the issue.
+            // `breaks: true` makes newlines in Markdown render as <br> tags.
+            marked.setOptions({
+                breaks: true,
+                gfm: true, // Enable GitHub Flavored Markdown (tables, strikethrough, etc.)
+                // The `sanitize` option is deprecated.
+                // If you need to sanitize HTML, use a library like DOMPurify AFTER parsing.
+            });
+
+            const markdownContainer = document.getElementById('markdown-content');
+            if (markdownContainer) {
+                const rawMarkdownContent = markdownContainer.textContent; // Or .innerText
+                
+                // Parse Markdown to HTML
+                let htmlContent = marked.parse(rawMarkdownContent);
+
+                // Optional: Sanitize the HTML if the source is untrusted
+                // Make sure DOMPurify is loaded if you uncomment this:
+                // if (typeof DOMPurify !== 'undefined') {
+                //     htmlContent = DOMPurify.sanitize(htmlContent);
+                // } else {
+                //     console.warn('DOMPurify not loaded. Skipping sanitization.');
+                // }
+                
+                markdownContainer.innerHTML = htmlContent;
+            } else {
+                console.error("Element with ID 'markdown-content' not found.");
+            }
+        });
+    </script> -->
 </body>
 </html>
