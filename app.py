@@ -3,6 +3,7 @@ import pandas as pd
 import os
 import markdown
 from src.agent.diabetes_agent import DiabetesAgent 
+from src.utils.csv_parser import validate_csv_data, CSVValidationError
 from src import config as AppConfig  
 import json
 
@@ -34,7 +35,6 @@ def create_app():
         # Retrieve data from session
         explanation_markdown = session.get('explanation_markdown')
         plot_filename = session.get('plot_filename')
-        print(plot_filename, 'plot_filename')
         if not explanation_markdown or not plot_filename:
             # Handle case where data is not in session (e.g., direct access to /results-page)
             return "No diagnosis data found. Please upload a file first.", 400 # Or redirect to upload page
@@ -126,31 +126,39 @@ def create_app():
             return "ERROR: El archivo no tiene nombre.", 400
 
         if file and file.filename.endswith('.csv'):
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-            file.save(filepath)  # Guarda el archivo en el servidor
-            agent = DiabetesAgent(cfg=AppConfig)
-            full_analysis_output = agent.generate_diagnostic_explanation('uploads/latent_data.csv')
-            explanation=full_analysis_output['llm_generated_explanation']
-            #html_explanation = markdown.markdown(explanation, extensions=['fenced_code', 'tables', 'extra'])
-            patient = pd.read_csv(filepath)
-            patient_nbr=patient["patient_nbr"].iloc[0]
-            print(patient_nbr, f"results/shap_explanations/patient_{patient_nbr}_summary_bar.png")
-            # # Ruta al archivo PNG en la carpeta `static`
-            plot_url = f"results/shap_explanations/patient_{patient_nbr}_summary_bar.png"
+            try:
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+                file.save(filepath)  # Guarda el archivo en el servidor
+                # Validar el CSV
+                validated_df = validate_csv_data(filepath)
+                agent = DiabetesAgent(cfg=AppConfig)
+                full_analysis_output = agent.generate_diagnostic_explanation('uploads/latent_data.csv')
+                explanation=full_analysis_output['llm_generated_explanation']
+                #html_explanation = markdown.markdown(explanation, extensions=['fenced_code', 'tables', 'extra'])
+                patient = pd.read_csv(filepath)
 
-            # # Explicación de ejemplo
-            # explanation = l
-            # Save the explanation to a file in the uploads directory
-            explain_path = os.path.join(app.config['UPLOAD_FOLDER'], 'explain.txt')
-            with open(explain_path, 'w', encoding='utf-8') as f:
-                f.write(explanation)
-            #return render_template('results.html', plot_url=plot_url, explanation=html_explanation)
-            session['explanation_markdown'] = explanation  # Store the explanation in session   
-            session['plot_filename'] = plot_url # Store the filename
+                patient_nbr=patient["patient_nbr"].iloc[0]
+                print(patient_nbr, f"results/shap_explanations/patient_{patient_nbr}_summary_bar.png")
+                # # Ruta al archivo PNG en la carpeta `static`
+                plot_url = f"results/shap_explanations/patient_{patient_nbr}_summary_bar.png"
 
-            # Redirect to the dedicated results display page
-            return redirect(url_for('display_diagnosis_results'))
-                
+                # # Explicación de ejemplo
+                # explanation = l
+                # Save the explanation to a file in the uploads directory
+                explain_path = os.path.join(app.config['UPLOAD_FOLDER'], 'explain.txt')
+                with open(explain_path, 'w', encoding='utf-8') as f:
+                    f.write(explanation)
+                #return render_template('results.html', plot_url=plot_url, explanation=html_explanation)
+                session['explanation_markdown'] = explanation  # Store the explanation in session   
+                session['plot_filename'] = plot_url # Store the filename
+
+                # Redirect to the dedicated results display page
+                return redirect(url_for('display_diagnosis_results'))
+            
+            except CSVValidationError as e:
+                return f"ERROR: {str(e)}", 400   
+            except (pd.errors.EmptyDataError, pd.errors.ParserError) as e:   
+                return f"ERROR: El archivo CSV está vacío o tiene un formato incorrecto. {str(e)}", 400
         else:
             return "ERROR: El archivo debe ser un CSV.", 400
         
