@@ -142,13 +142,7 @@ def create_app():
                 # # Ruta al archivo PNG en la carpeta `static`
                 plot_url = f"results/shap_explanations/patient_{patient_nbr}_summary_bar.png"
 
-                # # Explicación de ejemplo
-                # explanation = l
-                # Save the explanation to a file in the uploads directory
-                explain_path = os.path.join(app.config['UPLOAD_FOLDER'], 'explain.txt')
-                with open(explain_path, 'w', encoding='utf-8') as f:
-                    f.write(explanation)
-                #return render_template('results.html', plot_url=plot_url, explanation=html_explanation)
+
                 session['explanation_markdown'] = explanation  # Store the explanation in session   
                 session['plot_filename'] = plot_url # Store the filename
 
@@ -272,8 +266,7 @@ def create_app():
         explanation=full_analysis_output['llm_generated_explanation']
         #html_explanation = markdown.markdown(explanation, extensions=['fenced_code', 'tables', 'extra'])
         session['explanation_markdown'] = explanation
-        session['plot_filename_static'] = f"results/shap_explanations/patient_{patient_id}_summary_bar.png"
-        print(f"results/shap_explanations/patient_{patient_id}_summary_bar.png")
+        session['plot_filename'] = f"results/shap_explanations/patient_{patient_id}_summary_bar.png"
         
 
         # Explicación de ejemplo
