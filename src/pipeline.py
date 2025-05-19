@@ -296,7 +296,6 @@ class Pipeline:
                 epochs=self.cfg.AE_EPOCHS, device=self.device, checkpoint_dir=self.cfg.MODELS_DIR,
                 early_stopping_patience=self.cfg.AE_EARLY_STOPPING_PATIENCE, 
                 gradient_clip_value=getattr(self.cfg, 'GRADIENT_CLIP_VALUE', 1.0),
-                model_checkpoint_name=getattr(self.cfg, 'AE_MODEL_CHECKPOINT_NAME', 'ae_best.pt')
             )
             ae_trainer.train()
             logger.info("--- Autoencoder Training Complete ---")
@@ -335,7 +334,6 @@ class Pipeline:
                 checkpoint_dir=self.cfg.MODELS_DIR,
                 early_stopping_patience=self.cfg.PREDICTOR_EARLY_STOPPING_PATIENCE,
                 gradient_clip_value=getattr(self.cfg, 'GRADIENT_CLIP_VALUE', 1.0),
-                model_checkpoint_name=getattr(self.cfg, 'PREDICTOR_MODEL_CHECKPOINT_NAME', 'predictor_best.pt')
             )
             predictor_trainer.train()
             logger.info("--- Predictor Training Complete ---")

@@ -31,7 +31,7 @@ The preprocessing script prepares the raw dataset for modeling by applying a ser
 Make sure your environment is activated and all required dependencies are installed.
 
 ```bash
-python src/preprocessing.py
+python -m src.run
 ```
 
 ### 📋 Output
