@@ -82,8 +82,18 @@
                     </div>
                     <div class="col-md-4">
                         <label class="form-label">Age</label>
-                        <input type="number" class="form-control" name="age" required min="1" max="130">
-                            
+                        <select class="form-select" name="age" required>
+                            <option value="[0-10)">0-9</option>
+                            <option value="[10-20)">10-19</option>
+                            <option value="[20-30)">20-29</option>
+                            <option value="[30-40)">30-39</option>
+                            <option value="[40-50)">40-49</option>
+                            <option value="[50-60)">50-59</option>
+                            <option value="[60-70)">60-69</option>
+                            <option value="[70-80)">70-79</option>
+                            <option value="[80-90)">80-89</option>
+                            <option value="[90-100)">90-99</option>
+                        </select>
                     </div>
                 </div>
                 <div class="mt-3">
@@ -978,393 +988,525 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const form = document.getElementById('medicalForm');
-            const steps = document.querySelectorAll('.step');
-            const progressBar = document.querySelector('.progress-bar');
-            let currentStep = 0;
+document.addEventListener('DOMContentLoaded', () => {
+    // --- DOM Element Selectors (Define them ONCE) ---
+    const medicalForm = document.getElementById('medicalForm');
+    const steps = Array.from(document.querySelectorAll('.step')); // Convert to array for indexOf
+    const progressBar = document.querySelector('.progress-bar');
+    const loadingOverlay = document.getElementById('loadingOverlay');
 
-            // Inicializar primer paso
-            showStep(currentStep);
+    // Patient Search Elements
+    const patientNumberInput = document.getElementById('patientNumberInput');
+    const patientResultsContainer = document.getElementById('patientResults');
 
-            // Botones de navegación
-            document.querySelectorAll('.next-step').forEach(button => {
-                button.addEventListener('click', () => validateAndNext());
-            });
+    // Diagnosis Input IDs
+    const diagInputIds = ['diag1Input', 'diag2Input', 'diag3Input'];
 
-            document.querySelectorAll('.prev-step').forEach(button => {
-                button.addEventListener('click', () => prevStep());
-            });
+    // Medication Controls
+    const medicationControls = document.querySelectorAll('.medication-control');
+    const discontinueAllButton = document.getElementById('discontinueAll');
 
-            function showStep(stepIndex) {
-                steps.forEach((step, index) => {
-                    step.classList.toggle('active', index === stepIndex);
-                });
-                updateProgress(stepIndex);
-            }
+    // Navigation Buttons
+    const nextStepButtons = document.querySelectorAll('.next-step');
+    const prevStepButtons = document.querySelectorAll('.prev-step');
 
-            function validateAndNext() {
-                const currentStepElements = steps[currentStep].querySelectorAll('[required]');
-                let isValid = true;
+    let currentStep = 0;
+    let patientSearchDebounceTimer;
+    let diagSearchDebounceTimers = {}; // Object to hold timers for each diag input
 
-                currentStepElements.forEach(element => {
-                    if (!element.reportValidity()) isValid = false;
-                });
+    // --- Initialization Functions ---
 
-                if (isValid && currentStep < steps.length - 1) {
-                    currentStep++;
-                    showStep(currentStep);
-                }
-            }
-
-            function prevStep() {
-                if (currentStep > 0) {
-                    currentStep--;
-                    showStep(currentStep);
-                }
-            }
-
-            function updateProgress(stepIndex) {
-                const progress = ((stepIndex + 1) / steps.length) * 100;
-                progressBar.style.width = `${progress}%`;
-            }
-
-            form.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                document.getElementById('loadingOverlay').style.display = 'flex';
-
-                try {
-                    const response = await fetch('/submit-questionnaire', {
-                        method: 'POST',
-                        body: new FormData(form)
-                    });
-
-                    if (response.ok) {
-                        window.location.href = '/results';
-                    } else {
-                        alert('Error submitting form');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                } finally {
-                    document.getElementById('loadingOverlay').style.display = 'none';
-                }
-            });
-        });
-        // Corrige el selector del input hidden y asegura la vinculación correcta
-document.querySelectorAll('.btn-med').forEach(button => {
-    button.addEventListener('click', function() {
-        const cardBody = this.closest('.card-body');
-        const input = cardBody.querySelector('input[type="hidden"]'); // Selector corregido
-        
-        // Remover selección previa
-        this.parentNode.querySelectorAll('.btn-med').forEach(btn => btn.classList.remove('selected'));
-        
-        // Añadir selección actual
-        this.classList.add('selected');
-        
-        // Actualizar valor (asegurar que los valores coincidan con lo esperado por el backend)
-        switch(this.dataset.action) {
-            case 'up': 
-                input.value = "Up"; 
-                break;
-            case 'down': 
-                input.value = "Down"; 
-                break;
-            case 'equal': 
-                input.value = "Steady"; 
-                break;
-            case 'none': 
-                input.value = "No"; 
-                break;
-        }
-        console.log(`Campo ${input.name} actualizado a: ${input.value}`); // Para depuración
-    });
-});
-    // Validación al enviar el formulario
-    const form = document.querySelector('form');
-    form.addEventListener('submit', e => {
-        let allValid = true;
-        ['diag1Input', 'diag2Input', 'diag3Input'].forEach(inputId => {
-            const input = document.getElementById(inputId);
-            console.log(`Validando ${inputId}: ${input.value}`);
-            // Si el campo no está vacío, debe coincidir con el valor seleccionado
-            if (input.value && input.value !== input.dataset.selected && input.value !== '') {
-                allValid = false;
-            }
-        });
-        if (!allValid) {
-            e.preventDefault();
-            alert('Por favor, selecciona un diagnóstico válido de la lista.');
-        }
-    });
-
-    document.querySelector('form').addEventListener('submit', function(e) {
-    // Validate medications
-    const invalidMedications = [];
-    
-    document.querySelectorAll('.medication-control').forEach(control => {
-        const input = control.querySelector('input[type="hidden"]');
-        const medicationName = control.querySelector('.card-title').textContent;
-        
-        // Check if value is empty or invalid
-         if (!input.value || !["Up", "Down", "Steady", "No"].includes(input.value)) {
-            invalidMedications.push(medicationName);
-            control.classList.add('is-invalid');
+    function initializeStepNavigation() {
+        if (steps.length > 0) {
+            showStep(currentStep); // Show initial step
         } else {
-            control.classList.remove('is-invalid');
+            console.warn("No steps found for the questionnaire.");
+            return;
         }
-    });
 
-        if (invalidMedications.length > 0) {
-            e.preventDefault();
-            alert(`Please select an option for:\n${invalidMedications.join('\n')}`);
-            // Scroll to first invalid medication
-            document.querySelector('.is-invalid')?.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center'
-            });
-        }
-    });
-
-    // Add visual validation to buttons
-    document.querySelectorAll('.btn-med').forEach(button => {
-        button.addEventListener('click', function() {
-            this.closest('.medication-control').classList.remove('is-invalid');
+        nextStepButtons.forEach(button => {
+            button.addEventListener('click', () => validateCurrentStepAndProceed(true));
         });
-    });
 
-
-    document.getElementById('discontinueAll').addEventListener('click', () => {
-    document.querySelectorAll('.medication-control').forEach(control => {
-        const noneButton = control.querySelector('[data-action="none"]');
-        const input = control.querySelector('input[type="hidden"]');
-        
-        control.querySelectorAll('.btn-med').forEach(btn => {
-            btn.classList.remove('selected');
+        prevStepButtons.forEach(button => {
+            button.addEventListener('click', () => navigateToPreviousStep());
         });
-        
-        noneButton.classList.add('selected');
-        input.value = "No"; // Changed from -2 to match validation
-        control.classList.remove('is-invalid');
-    });
-});
-// Función para mostrar los resultados de búsqueda
-function updatePatientResults(patients) {
-    const resultsContainer = document.getElementById('patientResults');
-    resultsContainer.innerHTML = '';
-    
-    if (patients.length === 0) {
-        resultsContainer.innerHTML = '<div class="patient-result-item text-muted">No se encontraron resultados</div>';
-        resultsContainer.classList.remove('d-none');
-        return;
     }
 
-    patients.forEach(patient => {
-        const div = document.createElement('div');
-        div.className = 'patient-result-item';
-        div.innerHTML = `
-            <div class="fw-bold">Paciente #${patient.patient_nbr}</div>
-            <small>Edad: ${patient.age || 'N/A'}</small>
-        `;
-        
-        div.addEventListener('click', () => {
-            loadPatientData(patient.patient_nbr);
-            resultsContainer.classList.add('d-none');
+    function initializeMedicationControls() {
+        medicationControls.forEach(control => {
+            const buttons = control.querySelectorAll('.btn-med');
+            const hiddenInput = control.querySelector('input[type="hidden"]');
+            buttons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove 'selected' from sibling buttons in the same control
+                    buttons.forEach(btn => btn.classList.remove('selected'));
+                    // Add 'selected' to the clicked button
+                    this.classList.add('selected');
+                    // Update hidden input value
+                    const action = this.dataset.action;
+                    switch(action) {
+                        case 'up':    hiddenInput.value = "Up";     break;
+                        case 'down':  hiddenInput.value = "Down";   break;
+                        case 'equal': hiddenInput.value = "Steady"; break;
+                        case 'none':  hiddenInput.value = "No";     break;
+                        default:      hiddenInput.value = "";       break;
+                    }
+                    control.classList.remove('is-invalid'); // Remove validation error on selection
+                    // console.log(`Medication ${hiddenInput.name} updated to: ${hiddenInput.value}`);
+                });
+            });
         });
-        
-        resultsContainer.appendChild(div);
-    });
-    
-    resultsContainer.classList.remove('d-none');
-}
 
-// JavaScript completo corregido
-document.addEventListener('DOMContentLoaded', () => {
-    const patientInput = document.getElementById('patientNumberInput');
-    const resultsContainer = document.getElementById('patientResults');
-    let debounceTimer;
+        if (discontinueAllButton) {
+            discontinueAllButton.addEventListener('click', () => {
+                medicationControls.forEach(control => {
+                    const noneButton = control.querySelector('.btn-med[data-action="none"]');
+                    const hiddenInput = control.querySelector('input[type="hidden"]');
+                    
+                    control.querySelectorAll('.btn-med.selected').forEach(btn => btn.classList.remove('selected'));
+                    
+                    if (noneButton) {
+                        noneButton.classList.add('selected');
+                        hiddenInput.value = "No";
+                    }
+                    control.classList.remove('is-invalid');
+                });
+            });
+        }
+    }
 
-    patientInput.addEventListener('input', (e) => {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(async () => {
-            const query = e.target.value;
-            if (query.length < 1) {
-                resultsContainer.classList.add('d-none');
+    function initializePatientSearch() {
+        if (!patientNumberInput || !patientResultsContainer) {
+            console.warn("Patient search elements not found.");
+            return;
+        }
+
+        patientNumberInput.addEventListener('input', (e) => {
+            clearTimeout(patientSearchDebounceTimer);
+            patientSearchDebounceTimer = setTimeout(async () => {
+                const query = e.target.value.trim();
+                if (query.length < 1) {
+                    patientResultsContainer.classList.add('d-none');
+                    patientResultsContainer.innerHTML = '';
+                    return;
+                }
+                try {
+                    const response = await fetch(`/search-patient?q=${encodeURIComponent(query)}`);
+                    if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                    const patients = await response.json();
+                    renderPatientSearchResults(patients);
+                } catch (error) {
+                    console.error('Error searching patients:', error);
+                    patientResultsContainer.innerHTML = '<div class="patient-result-item text-danger">Error searching.</div>';
+                    patientResultsContainer.classList.remove('d-none');
+                }
+            }, 300);
+        });
+
+        // Close patient results when clicking outside
+        document.addEventListener('click', (e) => {
+            if (patientResultsContainer && !patientNumberInput.contains(e.target) && !patientResultsContainer.contains(e.target)) {
+                patientResultsContainer.classList.add('d-none');
+            }
+        });
+    }
+
+    function initializeDiagnosisAutocomplete() {
+        diagInputIds.forEach(inputId => {
+            const inputElement = document.getElementById(inputId);
+            const resultsElementId = inputId + 'Results';
+            const resultsElement = document.getElementById(resultsElementId);
+
+            if (!inputElement || !resultsElement) {
+                console.warn(`Autocomplete elements for ${inputId} not found.`);
                 return;
             }
-            
-            try {
-                const response = await fetch(`/search-patient?q=${query}`);
-                const patients = await response.json();
-                updatePatientResults(patients);
-            } catch (error) {
-                console.error('Error:', error);
-            }
-        }, 300);
-    });
 
-    // Cerrar resultados al hacer clic fuera
-    document.addEventListener('click', (e) => {
-        if (!patientInput.contains(e.target)) {
-            resultsContainer.classList.add('d-none');
-        }
-    });
-});
+            inputElement.addEventListener('input', (e) => {
+                clearTimeout(diagSearchDebounceTimers[inputId]);
+                delete inputElement.dataset.selected; // Clear selected status on new input
 
-async function loadPatientData(patientId) {
-    try {
-        const response = await fetch(`/get-patient-data/${patientId}`);
-        const patientData = await response.json();
-
-        // Mapa entre valor de datos y acción de botón
-        const medicationMap = {
-            'Up': 'up',
-            'Down': 'down',
-            'Steady': 'equal',
-            'No': 'none'
-        };
-
-        // Para cada control de medicamento
-        document.querySelectorAll('.medication-control').forEach(control => {
-            const hiddenInput = control.querySelector('input[type="hidden"]');
-            const fieldName = hiddenInput.name;                // Ej: "metformin"
-            const dataValue = patientData[fieldName];          // Ej: "Up", "Down", ...
-
-            // Si hay dato para este medicamento
-            if (dataValue && medicationMap[dataValue]) {
-                // Acción que toca
-                const action = medicationMap[dataValue];
-
-                // Limpiar selección previa
-                control.querySelectorAll('.btn-med').forEach(btn => {
-                    btn.classList.remove('selected');
-                });
-
-                // Seleccionar botón correspondiente
-                const btn = control.querySelector(`.btn-med[data-action="${action}"]`);
-                if (btn) {
-                    btn.classList.add('selected');
-                    hiddenInput.value = dataValue;
-                }
-            }
-        });
-
-        // Resto de campos (inputs, selects normales)
-        Object.entries(patientData).forEach(([field, value]) => {
-            // Ya tratamos los medicamentos, omitimos si el control es hidden
-            const input = document.querySelector(`[name="${field}"]:not(input[type="hidden"])`);
-            if (input) {
-                input.value = value;
-            }
-        });
-
-    } catch (error) {
-        console.error('Error:', error);
-        alert('Error loading patient data');
-        }
-    }
-
-    // Autocomplete for diag_1, diag_2, diag_3
-    function updateDiagResults(inputId, results) {
-    const resultsContainer = document.getElementById(inputId + 'Results');
-    const input = document.getElementById(inputId);
-    resultsContainer.innerHTML = '';
-
-    if (results.length === 0) {
-        resultsContainer.innerHTML = '<div class="patient-result-item text-muted">No se encontraron resultados</div>';
-        resultsContainer.classList.remove('d-none');
-        return;
-    }
-
-    results.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'patient-result-item';
-        div.innerHTML = `
-            <div class="fw-bold">${item.numero}</div>
-            <small>${item.desc || ''}</small>
-        `;
-        div.addEventListener('click', () => {
-            // 1) Rellenar el input
-            input.value = item.numero;
-            // 2) Guardar valor “válido” en un data-attribute
-            input.dataset.selected = item.numero;
-            // 3) Ocultar la lista
-            resultsContainer.classList.add('d-none');
-        });
-        resultsContainer.appendChild(div);
-    });
-
-    resultsContainer.classList.remove('d-none');
-    }
-
-    ['diag1Input', 'diag2Input', 'diag3Input'].forEach(inputId => {
-    const input = document.getElementById(inputId);
-    if (!input) return;
-
-        input.addEventListener('blur', () => {
-            // Pequeño delay para que haga click en la sugerencia antes de validar
-            setTimeout(() => {
-                const valid = input.dataset.selected;
-                if (!valid || input.value !== valid) {
-                    input.value = '';             // Limpia si no coincide
-                    delete input.dataset.selected; // Resetea el data-attribute
-                }
-            }, 200);
-        });
-    });
-
-    document.addEventListener('DOMContentLoaded', () => {
-        ['diag1Input', 'diag2Input', 'diag3Input'].forEach((inputId, idx) => {
-            // Map inputId to field name in form
-            let fieldName = ['diag_1', 'diag_2', 'diag_3'][idx];
-            let input = document.getElementById(inputId);
-            let resultsContainer = document.getElementById(inputId + 'Results');
-            if (!input) {
-                // Try to assign id to input if not present (for diag_2 and diag_3)
-                const field = document.querySelector(`[name="${fieldName}"]`);
-                if (field) {
-                    field.id = inputId;
-                    // Create results container if not present
-                    if (!document.getElementById(inputId + 'Results')) {
-                        const div = document.createElement('div');
-                        div.id = inputId + 'Results';
-                        div.className = 'mt-2 d-none';
-                        field.parentNode.appendChild(div);
-                    }
-                    input = field;
-                    resultsContainer = document.getElementById(inputId + 'Results');
-                }
-            }
-            if (!input) return;
-
-            let debounce;
-            input.addEventListener('input', (e) => {
-                clearTimeout(debounce);
-                debounce = setTimeout(async () => {
-                    const query = e.target.value;
+                diagSearchDebounceTimers[inputId] = setTimeout(async () => {
+                    const query = e.target.value.trim();
                     if (query.length < 1) {
-                        resultsContainer.classList.add('d-none');
+                        resultsElement.classList.add('d-none');
+                        resultsElement.innerHTML = '';
                         return;
                     }
                     try {
                         const response = await fetch(`/search/icd9?q=${encodeURIComponent(query)}`);
-                        const results = await response.json();
-                        updateDiagResults(inputId, results);
+                        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+                        const searchResults = await response.json();
+                        renderDiagnosisSearchResults(inputId, searchResults);
                     } catch (error) {
-                        console.error('Error:', error);
+                        console.error(`Error searching ICD9 for ${inputId}:`, error);
+                        resultsElement.innerHTML = '<div class="patient-result-item text-danger">Error searching.</div>';
+                        resultsElement.classList.remove('d-none');
                     }
                 }, 300);
             });
 
+            inputElement.addEventListener('blur', () => {
+                setTimeout(() => {
+                    // If field has text but it's not a 'selected' one, clear it
+                    if (inputElement.value && inputElement.value.trim() !== "" && inputElement.value !== inputElement.dataset.selected) {
+                        inputElement.value = '';
+                        delete inputElement.dataset.selected;
+                        resultsElement.classList.add('d-none');
+                        inputElement.classList.remove('is-invalid'); // Also clear validation on blur clear
+                    }
+                }, 200); // Delay to allow click on a suggestion
+            });
+
+            // Close diagnosis results when clicking outside specific input/results
             document.addEventListener('click', (e) => {
-                if (!input.contains(e.target) && !resultsContainer.contains(e.target)) {
-                    resultsContainer.classList.add('d-none');
+                 if (!inputElement.contains(e.target) && !resultsElement.contains(e.target)) {
+                    resultsElement.classList.add('d-none');
                 }
             });
         });
-    });
-    </script>
+    }
+
+    // --- Step Navigation and Progress Functions ---
+    function showStep(stepIndex) {
+        if (stepIndex < 0 || stepIndex >= steps.length) {
+            console.error("Invalid step index:", stepIndex);
+            return;
+        }
+        steps.forEach((step, index) => {
+            step.classList.toggle('active', index === stepIndex);
+        });
+        currentStep = stepIndex; // Ensure currentStep is updated
+        updateProgressBar();
+    }
+
+    function updateProgressBar() {
+        if (!progressBar || steps.length === 0) return;
+        const progressPercentage = ((currentStep + 1) / steps.length) * 100;
+        progressBar.style.width = `${progressPercentage}%`;
+    }
+
+    function validateCurrentStepAndProceed(isNextButton) {
+        const currentStepElement = steps[currentStep];
+        if (!currentStepElement) return;
+
+        const requiredInputs = currentStepElement.querySelectorAll('[required]');
+        let allFieldsInStepValid = true;
+
+        requiredInputs.forEach(input => {
+            input.classList.remove('is-invalid'); // Clear previous errors
+            if (input.tagName === 'SELECT' && input.value === "") {
+                allFieldsInStepValid = false;
+                input.classList.add('is-invalid');
+                if (input.reportValidity) input.reportValidity(); // Show browser default validation message
+            } else if (!input.checkValidity()) {
+                allFieldsInStepValid = false;
+                input.classList.add('is-invalid');
+                if (input.reportValidity) input.reportValidity();
+            }
+        });
+
+        if (allFieldsInStepValid) {
+            if (isNextButton && currentStep < steps.length - 1) {
+                navigateToNextStep();
+            }
+        } else {
+            if (isNextButton) { // Only alert if "Next" was clicked
+                alert('Please fill in all required fields in the current step.');
+                const firstInvalid = currentStepElement.querySelector('.is-invalid, :invalid');
+                if (firstInvalid) {
+                    firstInvalid.focus();
+                    firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        }
+        return allFieldsInStepValid; // Return status for submit handler
+    }
+
+    function navigateToNextStep() {
+        if (currentStep < steps.length - 1) {
+            currentStep++;
+            showStep(currentStep);
+        }
+    }
+
+    function navigateToPreviousStep() {
+        if (currentStep > 0) {
+            currentStep--;
+            showStep(currentStep);
+        }
+    }
+
+    // --- Data Loading and Rendering Functions ---
+    function renderPatientSearchResults(patients) {
+        if (!patientResultsContainer) return;
+        patientResultsContainer.innerHTML = '';
+        if (patients.length === 0) {
+            patientResultsContainer.innerHTML = '<div class="patient-result-item text-muted">No patients found.</div>';
+        } else {
+            patients.forEach(patient => {
+                const div = document.createElement('div');
+                div.className = 'patient-result-item';
+                div.innerHTML = `<div class="fw-bold">Patient #${patient.patient_nbr}</div><small>Age: ${patient.age || 'N/A'}</small>`;
+                div.addEventListener('click', () => {
+                    if(patientNumberInput) patientNumberInput.value = patient.patient_nbr; // Also fill the input
+                    loadPatientDataFromServer(patient.patient_nbr);
+                    patientResultsContainer.classList.add('d-none');
+                });
+                patientResultsContainer.appendChild(div);
+            });
+        }
+        patientResultsContainer.classList.remove('d-none');
+    }
+
+    async function loadPatientDataFromServer(patientId) {
+        if (loadingOverlay) loadingOverlay.style.display = 'flex';
+        try {
+            const response = await fetch(`/get-patient-data/${patientId}`);
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`Failed to load patient data: ${response.status} - ${errorText}`);
+            }
+            const patientData = await response.json();
+            populateFormWithPatientData(patientData);
+            alert('Patient data loaded successfully!');
+        } catch (error) {
+            console.error('Error loading patient data from server:', error);
+            alert(`Error: ${error.message}`);
+        } finally {
+            if (loadingOverlay) loadingOverlay.style.display = 'none';
+        }
+    }
+
+    function populateFormWithPatientData(patientData) {
+        const medicationValueToActionMap = { 'Up': 'up', 'Down': 'down', 'Steady': 'equal', 'No': 'none' };
+
+        medicationControls.forEach(control => {
+            const hiddenInput = control.querySelector('input[type="hidden"]');
+            const fieldName = hiddenInput.name;
+            const dataValue = patientData[fieldName];
+
+            // Reset current medication selection
+            control.querySelectorAll('.btn-med.selected').forEach(btn => btn.classList.remove('selected'));
+            hiddenInput.value = ""; // Default to empty
+            control.classList.remove('is-invalid');
+
+            if (dataValue && medicationValueToActionMap[dataValue]) {
+                const actionToSelect = medicationValueToActionMap[dataValue];
+                const buttonToSelect = control.querySelector(`.btn-med[data-action="${actionToSelect}"]`);
+                if (buttonToSelect) {
+                    buttonToSelect.classList.add('selected');
+                    hiddenInput.value = dataValue;
+                }
+            } else {
+                 // Optionally select "No" if no data for a medication, or leave blank
+                const noneButton = control.querySelector('.btn-med[data-action="none"]');
+                if (noneButton) { // Default to "No" if no data
+                    // noneButton.classList.add('selected');
+                    // hiddenInput.value = "No";
+                }
+            }
+        });
+
+        // Populate other form fields
+        Object.entries(patientData).forEach(([fieldName, value]) => {
+            const inputElement = medicalForm.querySelector(`[name="${fieldName}"]:not(input[type="hidden"])`);
+            if (inputElement) {
+                inputElement.value = value !== null && value !== undefined ? value : '';
+
+                // Crucial fix for diagnosis fields: set dataset.selected
+                if (diagInputIds.includes(inputElement.id) || diagInputIds.some(id => inputElement.name === id.replace('Input', ''))) {
+                    if (value && value.toString().trim() !== "") {
+                        inputElement.dataset.selected = value.toString().trim();
+                        // console.log(`Autoload: Set ${inputElement.id || inputElement.name}.dataset.selected to ${value}`);
+                    } else {
+                        delete inputElement.dataset.selected;
+                    }
+                }
+            }
+        });
+    }
+
+    function renderDiagnosisSearchResults(inputId, searchResults) {
+        const inputElement = document.getElementById(inputId);
+        const resultsElement = document.getElementById(inputId + 'Results');
+        if (!inputElement || !resultsElement) return;
+
+        resultsElement.innerHTML = '';
+        if (searchResults.length === 0) {
+            resultsElement.innerHTML = '<div class="patient-result-item text-muted">No diagnoses found.</div>';
+        } else {
+            searchResults.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'patient-result-item';
+                div.innerHTML = `<div class="fw-bold">${item.numero}</div><small>${item.desc || ''}</small>`;
+                div.addEventListener('click', () => {
+                    inputElement.value = item.numero;
+                    inputElement.dataset.selected = item.numero; // Mark as selected
+                    resultsElement.classList.add('d-none');
+                    inputElement.classList.remove('is-invalid'); // Clear validation error
+                });
+                resultsElement.appendChild(div);
+            });
+        }
+        resultsElement.classList.remove('d-none');
+    }
+
+
+    // --- Validation Functions for Final Submit ---
+    function validateAllMedicationsForSubmit() {
+        let allMedicationsValid = true;
+        const invalidMedicationNames = [];
+        medicationControls.forEach(control => {
+            const hiddenInput = control.querySelector('input[type="hidden"]');
+            const medicationName = control.querySelector('.card-title').textContent;
+            if (!hiddenInput.value || !["Up", "Down", "Steady", "No"].includes(hiddenInput.value)) {
+                allMedicationsValid = false;
+                invalidMedicationNames.push(medicationName);
+                control.classList.add('is-invalid');
+            } else {
+                control.classList.remove('is-invalid');
+            }
+        });
+
+        if (!allMedicationsValid) {
+            alert(`Please select an option for the following medications:\n${invalidMedicationNames.join('\n')}`);
+            const firstInvalidMed = document.querySelector('.medication-control.is-invalid');
+            if (firstInvalidMed) {
+                focusAndScrollToElement(firstInvalidMed);
+            }
+        }
+        return allMedicationsValid;
+    }
+
+    function validateAllDiagnosesForSubmit() {
+        let allDiagnosesValid = true;
+        diagInputIds.forEach(inputId => {
+            const inputElement = document.getElementById(inputId);
+            if (inputElement) {
+                // Invalid if: has value AND (value is not empty string OR value is not equal to dataset.selected)
+                // Simplified: Invalid if has a value AND that value is not the one marked as 'selected'
+                if (inputElement.value && inputElement.value.trim() !== "" && inputElement.value !== inputElement.dataset.selected) {
+                    allDiagnosesValid = false;
+                    inputElement.classList.add('is-invalid');
+                } else {
+                    inputElement.classList.remove('is-invalid');
+                }
+            }
+        });
+
+        if (!allDiagnosesValid) {
+            alert('One or more diagnosis fields have values that were not selected from the suggestion list. Please correct them or clear the field(s).');
+            const firstInvalidDiag = diagInputIds.map(id => document.getElementById(id)).find(el => el && el.classList.contains('is-invalid'));
+            if (firstInvalidDiag) {
+                focusAndScrollToElement(firstInvalidDiag);
+            }
+        }
+        return allDiagnosesValid;
+    }
+
+    function focusAndScrollToElement(element) {
+        if (!element) return;
+        const stepOfElement = element.closest('.step');
+        if (stepOfElement && !stepOfElement.classList.contains('active')) {
+            const stepIndex = steps.indexOf(stepOfElement);
+            if (stepIndex !== -1 && stepIndex !== currentStep) {
+                showStep(stepIndex); // Switch to the step with the error
+            }
+        }
+        // Timeout to ensure step is visible before scrolling/focusing
+        setTimeout(() => {
+            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if (typeof element.focus === 'function') {
+                element.focus();
+            }
+        }, 150); // Adjust delay if needed for complex UIs
+    }
+
+
+    // --- Main Form Submit Handler ---
+    if (medicalForm) {
+        medicalForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // ALWAYS prevent default to manage submission flow
+            console.log("Form submission initiated by user.");
+
+            // 1. Validate current step's required fields (especially if submit is on a step before the last)
+            //    This assumes the submit button might be visible before the last step, or user submits early.
+            if (!validateCurrentStepAndProceed(false)) { // Pass false as it's not a "Next" button click
+                console.log("Validation failed for current step's required fields.");
+                return; // Stop if current step is not valid
+            }
+             console.log("Current step required fields are valid.");
+
+
+            // 2. Validate all medications (regardless of current step)
+            if (!validateAllMedicationsForSubmit()) {
+                console.log("Medication validation failed.");
+                return; // Stop if medications are not valid
+            }
+            console.log("All medications are valid.");
+
+            // 3. Validate all diagnosis codes (regardless of current step)
+            if (!validateAllDiagnosesForSubmit()) {
+                console.log("Diagnosis code validation failed.");
+                return; // Stop if diagnoses are not valid
+            }
+            console.log("All diagnosis codes are valid.");
+
+            // If all validations pass, proceed with the actual submission
+            console.log("All validations passed. Submitting form data...");
+            if (loadingOverlay) loadingOverlay.style.display = 'flex';
+
+            try {
+                const formData = new FormData(medicalForm);
+                const response = await fetch('/submit-questionnaire', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    console.log("Server responded OK.");
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                    } else {
+                        // Try to parse JSON for a redirect_url, otherwise default
+                        try {
+                            const responseData = await response.json();
+                            if (responseData && responseData.redirect_url) {
+                                window.location.href = responseData.redirect_url;
+                            } else {
+                                window.location.href = '/results'; // Default success redirect
+                            }
+                        } catch (jsonError) {
+                            console.warn("Response was OK but not valid JSON. Defaulting redirect.", jsonError);
+                            window.location.href = '/results';
+                        }
+                    }
+                } else {
+                    const errorText = await response.text();
+                    alert(`Error submitting form: ${response.status} - ${errorText}`);
+                    console.error('Server error on form submission:', errorText);
+                }
+            } catch (networkError) {
+                alert('A network error occurred. Please check your connection and try again.');
+                console.error('Network error during form submission:', networkError);
+            } finally {
+                if (loadingOverlay) loadingOverlay.style.display = 'none';
+            }
+        });
+    } else {
+        console.error("The main medical form (#medicalForm) was not found!");
+    }
+
+    // --- Initialize all parts of the application ---
+    initializeStepNavigation();
+    initializeMedicationControls();
+    initializePatientSearch();
+    initializeDiagnosisAutocomplete();
+
+}); // End of DOMContentLoaded
+</script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 </body>
 </html>

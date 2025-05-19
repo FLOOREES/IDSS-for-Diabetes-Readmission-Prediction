@@ -14,7 +14,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA_DIR = os.path.join(BASE_DIR, "data")
 LOGS_DIR = os.path.join(BASE_DIR, "logs")
 MODELS_DIR = os.path.join(BASE_DIR, "models")
-RESULTS_DIR = os.path.join(BASE_DIR, "results")
+RESULTS_DIR = os.path.join(BASE_DIR, "static/results")
 
 for dir_path in [DATA_DIR, LOGS_DIR, MODELS_DIR, RESULTS_DIR]:
     os.makedirs(dir_path, exist_ok=True)

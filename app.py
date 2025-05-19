@@ -34,7 +34,7 @@ def create_app():
         # Retrieve data from session
         explanation_markdown = session.get('explanation_markdown')
         plot_filename = session.get('plot_filename')
-
+        print(plot_filename, 'plot_filename')
         if not explanation_markdown or not plot_filename:
             # Handle case where data is not in session (e.g., direct access to /results-page)
             return "No diagnosis data found. Please upload a file first.", 400 # Or redirect to upload page
@@ -59,10 +59,12 @@ def create_app():
     
     @app.route('/search/icd9')
     def search_icd9():
-        with open('data/icd9Hierarchy.json') as f:
+        with open('data/training_icd9.json') as f:
             icd9_data = json.load(f)
         query = request.args.get('q', '')
         results = []
+        added = set()
+
         for item in icd9_data:
             if "subchapter" in item.keys():
                 description = item["major"] + " " + item["subchapter"] + " " + item["chapter"]
@@ -70,7 +72,9 @@ def create_app():
                 description = item["major"] + " " + item["chapter"]
 
             if item['icd9'].startswith(query):
-                results.append({"numero": item["icd9"], "desc": item["descLong"]})
+                if item["icd9"] not in added:
+                    added.add(item["icd9"])
+                    results.append({"numero": item["icd9"], "desc": item["descLong"]})
 
             if item["threedigit"].startswith(query):
                 results.append({"numero": item["threedigit"], "desc": description})
@@ -83,17 +87,6 @@ def create_app():
                     results.append({"numero": item["threedigit"], "desc": description})
         return jsonify(results)
     
-    # @app.route('/search/icd9/<icd9>')
-    # def search_icd9_by_code(icd9):
-    #     with open('data/icd9Hierarchy.json') as f:
-    #         icd9_data = json.load(f)
-    #     for item in icd9_data:
-    #         if item['icd9'] == icd9:
-    #             return jsonify({"numero":item["icd9"], "desc": item["descLong"]})
-    #         elif item["threedigit"] == icd9:
-    #             return jsonify({"numero":item["threedigit"], "desc": item["major"]+" "+item["subchapter"]+" "+item["chapter"]})
-    #     return jsonify({"error": "ICD-9 code not found"}), 404
-
     @app.route('/search-patient')
     def search_patient():
         query = request.args.get('q', '')
@@ -139,9 +132,11 @@ def create_app():
             full_analysis_output = agent.generate_diagnostic_explanation('uploads/latent_data.csv')
             explanation=full_analysis_output['llm_generated_explanation']
             #html_explanation = markdown.markdown(explanation, extensions=['fenced_code', 'tables', 'extra'])
-            
+            patient = pd.read_csv(filepath)
+            patient_nbr=patient["patient_nbr"].iloc[0]
+            print(patient_nbr, f"results/shap_explanations/patient_{patient_nbr}_summary_bar.png")
             # # Ruta al archivo PNG en la carpeta `static`
-            plot_url = 'results/shap_explanations/patient_37096866_summary_bar.png'
+            plot_url = f"results/shap_explanations/patient_{patient_nbr}_summary_bar.png"
 
             # # Explicación de ejemplo
             # explanation = l
@@ -167,7 +162,7 @@ def create_app():
         # Obtener los datos enviados por el formulario
         encounter_id = request.form.get('encounter_id', type=int)  # Encounter ID
         patient_id = request.form.get('patient_nbr', type=int)
-        age = request.form.get('age', type=int)  # Age at Diagnosis
+        age = request.form.get('age', type=str)  # Age at Diagnosis
         race = request.form.get('race', type=str)
         gender = request.form.get('gender', type=str)
         admission_source_id = request.form.get('admission_source_id', type=int)
@@ -208,14 +203,13 @@ def create_app():
         diag_2 = request.form.get('diag_2', type=str)
         diag_3 = request.form.get('diag_3', type=str)
 
-        age_mapper = {0: '[0-10)', 1: '[10-20)', 2: '[20-30)', 3: '[30-40)', 4: '[40-50)', 5: '[50-60)', 6: '[60-70)', 7: '[70-80)', 8: '[80-90)', 9: '[90-100)'}
         # Guardar los datos en variables o procesarlos
         user_data = {
             'encounter_id': encounter_id,
             'patient_nbr': patient_id,
             'race': race,
             'gender': gender,
-            'age': age_mapper[age//10],
+            'age': age,
             'weight': '',
             'admission_type_id': admission_type_id,
             'discharge_disposition_id': discharge_disposition_id,
@@ -268,13 +262,16 @@ def create_app():
         agent = DiabetesAgent(cfg=AppConfig)
         full_analysis_output = agent.generate_diagnostic_explanation('uploads/latent_data.csv')
         explanation=full_analysis_output['llm_generated_explanation']
-        html_explanation = markdown.markdown(explanation, extensions=['fenced_code', 'tables', 'extra'])
-
-        plot_url = 'results/shap_explanations/patient_37096866_summary_bar.png'
+        #html_explanation = markdown.markdown(explanation, extensions=['fenced_code', 'tables', 'extra'])
+        session['explanation_markdown'] = explanation
+        session['plot_filename_static'] = f"results/shap_explanations/patient_{patient_id}_summary_bar.png"
+        print(f"results/shap_explanations/patient_{patient_id}_summary_bar.png")
+        
 
         # Explicación de ejemplo
+        return redirect(url_for('display_diagnosis_results'))
         
-        return render_template('results.html', plot_url=plot_url, explanation=html_explanation)
+        #return render_template('results.html', plot_url=plot_url, explanation=html_explanation)
 
 
     return app
