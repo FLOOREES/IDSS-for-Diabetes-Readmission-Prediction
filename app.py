@@ -11,6 +11,8 @@ os.chdir(file_dir)
 
 def create_app():
     app = Flask(__name__)
+    app.secret_key = 'your_super_secret_random_string_here'  # IMPORTANT!
+
     app.config['UPLOAD_FOLDER'] = os.path.join(file_dir, 'uploads')
     if not os.path.exists(app.config['UPLOAD_FOLDER']):
         os.makedirs(app.config['UPLOAD_FOLDER'])
@@ -26,9 +28,30 @@ def create_app():
     def titulo():
         return render_template('titulo.html')
     
-    @app.route('/results')
-    def results():
-        return render_template('results.html')
+
+    @app.route('/results', methods=['GET']) # New dedicated route for results
+    def display_diagnosis_results():
+        # Retrieve data from session
+        explanation_markdown = session.get('explanation_markdown')
+        plot_filename = session.get('plot_filename')
+
+        if not explanation_markdown or not plot_filename:
+            # Handle case where data is not in session (e.g., direct access to /results-page)
+            return "No diagnosis data found. Please upload a file first.", 400 # Or redirect to upload page
+
+        # Convert Markdown to HTML
+        html_explanation = markdown.markdown(explanation_markdown, extensions=['fenced_code', 'tables', 'extra'])
+        
+        # Construct the URL for the plot image using url_for('static', ...)
+        # This assumes 'plot_filename' is the path *within* your static folder.
+        # E.g., if static folder is 'static/' and plot_filename is 'plots/myplot.png',
+        # then the actual file is at 'static/plots/myplot.png'.
+        actual_plot_url = url_for('static', filename=plot_filename)
+
+        # Render the standalone results page
+        return render_template('results.html', 
+                            explanation=html_explanation, 
+                            plot_url=actual_plot_url)
     
     @app.route('/diagnosis-questionnaire')
     def questionnaire():
@@ -115,17 +138,24 @@ def create_app():
             agent = DiabetesAgent(cfg=AppConfig)
             full_analysis_output = agent.generate_diagnostic_explanation('uploads/latent_data.csv')
             explanation=full_analysis_output['llm_generated_explanation']
-            html_explanation = markdown.markdown(explanation, extensions=['fenced_code', 'tables', 'extra'])
+            #html_explanation = markdown.markdown(explanation, extensions=['fenced_code', 'tables', 'extra'])
             
             # # Ruta al archivo PNG en la carpeta `static`
-            plot_url = 'results/shap_explanations/patient_23043240_summary_bar.png'
+            plot_url = 'results/shap_explanations/patient_37096866_summary_bar.png'
 
             # # Explicación de ejemplo
             # explanation = l
-            
-            return render_template('results.html', plot_url=plot_url, explanation=html_explanation)
-            
-        
+            # Save the explanation to a file in the uploads directory
+            explain_path = os.path.join(app.config['UPLOAD_FOLDER'], 'explain.txt')
+            with open(explain_path, 'w', encoding='utf-8') as f:
+                f.write(explanation)
+            #return render_template('results.html', plot_url=plot_url, explanation=html_explanation)
+            session['explanation_markdown'] = explanation  # Store the explanation in session   
+            session['plot_filename'] = plot_url # Store the filename
+
+            # Redirect to the dedicated results display page
+            return redirect(url_for('display_diagnosis_results'))
+                
         else:
             return "ERROR: El archivo debe ser un CSV.", 400
         
@@ -238,20 +268,13 @@ def create_app():
         agent = DiabetesAgent(cfg=AppConfig)
         full_analysis_output = agent.generate_diagnostic_explanation('uploads/latent_data.csv')
         explanation=full_analysis_output['llm_generated_explanation']
-        # engine = SinglePatientPredictorEngine(AppConfig) # Pythonresult = 
-        # preds = engine.predict_for_patient(User)
-        # print(preds)
+        html_explanation = markdown.markdown(explanation, extensions=['fenced_code', 'tables', 'extra'])
 
-        # agent = MedicalAgent(db_path='uploads/latent_data.csv', documents_path='./documents',latent=True)
-        # exp_dic = agent.explain_diagnosis()
-        # for key in exp_dic:
-        #     l.append(exp_dic[key])
-        # Ruta al archivo PNG en la carpeta `static`
-        plot_url = 'results/shap_explanations/patient_23043240_summary_bar.png'
+        plot_url = 'results/shap_explanations/patient_37096866_summary_bar.png'
 
         # Explicación de ejemplo
         
-        return render_template('results.html', plot_url=plot_url, explanation=explanation)
+        return render_template('results.html', plot_url=plot_url, explanation=html_explanation)
 
 
     return app

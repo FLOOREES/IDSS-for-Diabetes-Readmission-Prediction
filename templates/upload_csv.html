@@ -134,19 +134,14 @@
                 const resultsHTML = await response.text();
 
                 if (response.ok) {
-                    // Simulamos un pequeño retraso para la transición (opcional)
-                    setTimeout(() => {
-                        // Ocultamos el overlay con transición
-                        loadingOverlay.style.opacity = '0';
-                        setTimeout(() => {
-                            loadingOverlay.classList.remove('show');
-                            // Insertamos el HTML de resultados
-                            resultsContainer.innerHTML = resultsHTML;
-
-                            // Mostramos animación de entrada de resultados
-                            resultsContainer.classList.add('show');
-                        }, 500); // tiempo para que el overlay se desvanezca
-                    }, 1000); // Simulación de retraso
+                    // The server will redirect, or we can manually navigate if it doesn't
+                    if (response.redirected) {
+                        window.location.href = response.url; // Follow server's redirect
+                    } else {
+                        // If server just returns 200 OK after processing (less ideal for this pattern)
+                        // then we manually navigate to where results are displayed.
+                        window.location.href = '/results'; // Manually navigate to the new results page URL
+    }
                 } else {
                     alert('Error al procesar el archivo: ' + resultsHTML);
                     loadingOverlay.style.opacity = '0';

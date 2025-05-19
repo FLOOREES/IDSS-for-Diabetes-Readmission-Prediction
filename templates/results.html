@@ -9,15 +9,20 @@
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body {
+       html, body {
+            height: 100%; /* Ensure html and body take full height */
+            margin: 0;
+            padding: 0;
+        }
+         body {
             display: flex;
             flex-direction: column;
-            min-height: 100vh;
         }
         main {
-            flex: 1;
-            padding: 2rem;
-            overflow-y: auto; /* Permite scroll en el contenido principal */
+            flex: 1; /* Allows main to grow and take available space */
+            overflow-y: auto; /* THIS IS KEY: Main content area will scroll */
+            padding: 2rem; /* Padding for the content within main */
+            /* No max-height here, it should use the available vertical space */
         }
         .explanation-content-area {
             margin-bottom: 2rem;
@@ -134,38 +139,6 @@
     </footer>
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-      <!-- <script>
-       document.addEventListener('DOMContentLoaded', function() {
-            // Configure marked options
-            // REMOVED `sanitize: true` as it's deprecated and likely the issue.
-            // `breaks: true` makes newlines in Markdown render as <br> tags.
-            marked.setOptions({
-                breaks: true,
-                gfm: true, // Enable GitHub Flavored Markdown (tables, strikethrough, etc.)
-                // The `sanitize` option is deprecated.
-                // If you need to sanitize HTML, use a library like DOMPurify AFTER parsing.
-            });
-
-            const markdownContainer = document.getElementById('markdown-content');
-            if (markdownContainer) {
-                const rawMarkdownContent = markdownContainer.textContent; // Or .innerText
-                
-                // Parse Markdown to HTML
-                let htmlContent = marked.parse(rawMarkdownContent);
-
-                // Optional: Sanitize the HTML if the source is untrusted
-                // Make sure DOMPurify is loaded if you uncomment this:
-                // if (typeof DOMPurify !== 'undefined') {
-                //     htmlContent = DOMPurify.sanitize(htmlContent);
-                // } else {
-                //     console.warn('DOMPurify not loaded. Skipping sanitization.');
-                // }
-                
-                markdownContainer.innerHTML = htmlContent;
-            } else {
-                console.error("Element with ID 'markdown-content' not found.");
-            }
-        });
-    </script> -->
+      
 </body>
 </html>
