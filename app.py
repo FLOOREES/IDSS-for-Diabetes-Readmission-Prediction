@@ -1,7 +1,8 @@
 from flask import Flask, render_template, request, session, flash, redirect, url_for, jsonify
 import pandas as pd
 import os
-from src.inference.predictor_engine import SinglePatientPredictorEngine 
+import markdown
+from src.agent.diabetes_agent import DiabetesAgent 
 from src import config as AppConfig  
 import json
 
@@ -111,27 +112,18 @@ def create_app():
         if file and file.filename.endswith('.csv'):
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(filepath)  # Guarda el archivo en el servidor
-
-            engine = SinglePatientPredictorEngine(AppConfig) 
-            engine.predict_for_patient(raw_patient_df)
+            agent = DiabetesAgent(cfg=AppConfig)
+            full_analysis_output = agent.generate_diagnostic_explanation('uploads/latent_data.csv')
+            explanation=full_analysis_output['llm_generated_explanation']
+            html_explanation = markdown.markdown(explanation, extensions=['fenced_code', 'tables', 'extra'])
             
-            #agent = MedicalAgent(db_path=filepath, documents_path='documents',latent=False)
-            #exp_dic = agent.explain_diagnosis()
+            # # Ruta al archivo PNG en la carpeta `static`
+            plot_url = 'results/shap_explanations/patient_23043240_summary_bar.png'
 
-            print(exp_dic)
-            l=[]
-            l.append("Death Probability: " + str(exp_dic["death_prediction"]))
-            l.append("Progressive Desease Probability: " + str(exp_dic["prog_prediction"]))
-            l.append("EXPLANATION:")
-            l.append(exp_dic["additional_info"])
-
-            # Ruta al archivo PNG en la carpeta `static`
-            plot_url = '/static/plot-diagram.png'
-
-            # Explicación de ejemplo
-            explanation = l
+            # # Explicación de ejemplo
+            # explanation = l
             
-            return render_template('results.html', plot_url=plot_url, explanation=explanation)
+            return render_template('results.html', plot_url=plot_url, explanation=html_explanation)
             
         
         else:
@@ -242,21 +234,22 @@ def create_app():
         }
         User = pd.DataFrame(user_data, index=[0])
         User.to_csv('uploads/latent_data.csv', index=False)
-        print(User)
+        # print(User)
+        agent = DiabetesAgent(cfg=AppConfig)
+        full_analysis_output = agent.generate_diagnostic_explanation('uploads/latent_data.csv')
+        explanation=full_analysis_output['llm_generated_explanation']
         # engine = SinglePatientPredictorEngine(AppConfig) # Pythonresult = 
         # preds = engine.predict_for_patient(User)
         # print(preds)
 
         # agent = MedicalAgent(db_path='uploads/latent_data.csv', documents_path='./documents',latent=True)
         # exp_dic = agent.explain_diagnosis()
-        l=[]
         # for key in exp_dic:
         #     l.append(exp_dic[key])
         # Ruta al archivo PNG en la carpeta `static`
         plot_url = 'results/shap_explanations/patient_23043240_summary_bar.png'
 
         # Explicación de ejemplo
-        explanation = l
         
         return render_template('results.html', plot_url=plot_url, explanation=explanation)
 
