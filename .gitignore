@@ -57,3 +57,5 @@ coverage/
 lab.ipynb
 .qodo
 data/
+a.sh
+context.txt
